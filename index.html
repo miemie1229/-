@@ -542,7 +542,7 @@
                                 >
                                 <div class="input-hint">Enter the name and school</div>
                             </div>
-                            <button class="search-button" id="searchButton">开始评估</button>
+                           <button id="searchBtn" type="button">搜索</button>
                         </div>
                     </div>
 
@@ -803,5 +803,27 @@
         // ============= 启动应用 =============
         init();
     </script>
+    <script>
+document.getElementById("searchBtn").onclick = async function () {
+  const text = (document.getElementById("searchInput")?.value || "").trim();
+  if (!text) {
+    alert("请先输入内容");
+    return;
+  }
+
+  try {
+    const res = await fetch("这里换成你的worker地址", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+
+    const result = await res.text();
+    alert("返回结果：" + result);
+  } catch (e) {
+    alert("请求失败：" + e.message);
+  }
+};
+</script>
 </body>
 </html>
