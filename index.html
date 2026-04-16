@@ -574,7 +574,7 @@
 
     <script>
         // ============= 配置 =============
-        const N8N_WEBHOOK_URL = 'http://weathered-lab-9d3f.8f3va2ehrl.workers.dev'; // 替换为你的 n8n Webhook URL
+        const N8N_WEBHOOK_URL = 'https://weathered-lab-9d3f.8f3va2ehrl.workers.dev'; // 替换为你的 n8n Webhook URL
 
         // ============= 状态管理 =============
         let isLoading = false;
@@ -636,7 +636,7 @@
 
             try {
                 // 调用 n8n Webhook
-                const response = await fetch(http://weathered-lab-9d3f.8f3va2ehrl.workers.dev, {
+                const response = await fetch(https://weathered-lab-9d3f.8f3va2ehrl.workers.dev, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -812,7 +812,7 @@ document.getElementById("searchBtn").onclick = async function () {
   }
 
   try {
-    const res = await fetch("http://weathered-lab-9d3f.8f3va2ehrl.workers.dev", {
+    const res = await fetch("https://weathered-lab-9d3f.8f3va2ehrl.workers.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text })
