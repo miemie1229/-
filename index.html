@@ -379,17 +379,7 @@
     }
 
     /* report_table */
-    .report-block {
-      background: #fafafa;
-      border: 1px solid #e5e5e7;
-      border-radius: 12px;
-      padding: 16px;
-      font-size: 13px;
-      color: #1d1d1f;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    }
+    
 
     /* ============= Table (stats) ============= */
     .stats-detail-grid {
@@ -637,7 +627,7 @@
       const keys = ["A", "B", "C", "NON"];
       const title = document.createElement("div");
       title.className = "chart-title";
-      title.textContent = "CCF 等级分布（来自 n8n stats）";
+      title.textContent = "CCF 等级分布";
 
       const grid = document.createElement("div");
       grid.className = "stats-mini-table";
@@ -678,13 +668,6 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    function addReportTable(reportTable) {
-      const block = document.createElement("div");
-      block.className = "report-block";
-      block.textContent = String(reportTable);
-      messagesContainer.appendChild(block);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
 
     function parseWorkerResponse(rawText) {
       // 你的 n8n 输出是数组：[{ ... }]
@@ -784,12 +767,7 @@
         addMessage("n8n 未返回 stats 统计明细", "assistant");
       }
 
-      // report_table
-      if (data.report_table) {
-        addReportTable(data.report_table);
-      } else {
-        addMessage("n8n 未返回 report_table", "assistant");
-      }
+    
 
       // 额外兜底：如果有 need_ai_count / 其他字段不展示，可按需补
     }
