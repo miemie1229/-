@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>科研人才 Mapping Agent</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,8 +15,15 @@
       line-height: 1.6;
     }
 
-    .container { display: flex; flex-direction: column; height: 100vh; position: relative; }
+    /* ============= 主容器 ============= */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+    }
 
+    /* ============= 顶部导航栏 ============= */
     .header {
       height: 60px;
       display: flex;
@@ -51,7 +58,13 @@
       font-weight: 700;
     }
 
-    .header-right { display: flex; align-items: center; gap: 24px; font-size: 13px; color: #666666; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 13px;
+      color: #666666;
+    }
 
     .status-badge {
       display: flex;
@@ -62,14 +75,28 @@
       border-radius: 16px;
       font-size: 12px;
     }
+
     .status-dot {
-      width: 8px; height: 8px; background: #34c759; border-radius: 50%;
+      width: 8px;
+      height: 8px;
+      background: #34c759;
+      border-radius: 50%;
       animation: pulse 2s infinite;
     }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    .main { flex: 1; display: flex; overflow: hidden; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
 
+    /* ============= 主内容区 ============= */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ============= 左侧面板 ============= */
     .sidebar {
       width: 380px;
       border-right: 1px solid #f5f5f7;
@@ -78,20 +105,30 @@
       background: #fafafa;
       overflow-y: auto;
     }
-    .sidebar-content { flex: 1; overflow-y: auto; padding: 0; }
 
-    .search-panel { padding: 32px 28px; border-bottom: 1px solid #f5f5f7; }
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* ============= 搜索面板 ============= */
+    .search-panel {
+      padding: 32px 28px;
+      border-bottom: 1px solid #f5f5f7;
+    }
 
     .search-title {
-      font-size: 14px; font-weight: 500; color: #999999;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #999999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
     }
 
     .search-box { display: flex; flex-direction: column; gap: 16px; }
-
     .input-group { display: flex; flex-direction: column; gap: 8px; }
-
     .input-label {
       font-size: 12px;
       font-weight: 600;
@@ -100,9 +137,15 @@
       letter-spacing: 0.3px;
     }
 
-    /* 改一下：输入 + 按钮一体化布局 */
-    .search-actions { display: flex; gap: 12px; align-items: stretch; }
-    .input-wrapper { position: relative; display: flex; flex: 1; }
+    /* 输入 + 按钮一体化（你说的搜索框不好看，这里做了同风格改进） */
+    .search-actions {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .input-wrapper { position: relative; display: flex; align-items: center; flex: 1; }
+
     input[type="text"] {
       width: 100%;
       padding: 12px 14px;
@@ -113,14 +156,23 @@
       transition: all 0.2s ease;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
+
     input[type="text"]::placeholder { color: #a1a1a6; }
+
     input[type="text"]:focus {
       outline: none;
       border-color: #000000;
       box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
     }
 
-    .input-hint { font-size: 11px; color: #a1a1a6; margin-top: 4px; font-weight: 400; }
+    input[type="text"]:hover:not(:focus) { border-color: #b0b0b5; }
+
+    .input-hint {
+      font-size: 11px;
+      color: #a1a1a6;
+      margin-top: 4px;
+      font-weight: 400;
+    }
 
     .search-button {
       width: 108px;
@@ -136,14 +188,28 @@
       letter-spacing: 0.3px;
       flex-shrink: 0;
     }
+
     .search-button:hover { background: #1d1d1f; }
     .search-button:active { transform: scale(0.99); }
-    .search-button.loading { opacity: 0.65; cursor: not-allowed; }
 
-    .history-section { padding: 28px 28px 0; flex: 1; overflow-y: auto; }
+    .search-button.loading {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* ============= 历史记录 ============= */
+    .history-section {
+      padding: 28px 28px 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+
     .history-title {
-      font-size: 14px; font-weight: 500; color: #999999;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #999999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       margin-bottom: 16px;
     }
 
@@ -158,11 +224,29 @@
       font-size: 13px;
       color: #1d1d1f;
     }
-    .history-item:hover { background: #f5f5f7; border-color: #d2d2d7; }
-    .history-item-name { font-weight: 500; margin-bottom: 4px; }
-    .history-item-school { font-size: 12px; color: #a1a1a6; }
 
-    .chat-area { flex: 1; display: flex; flex-direction: column; background: white; }
+    .history-item:hover {
+      background: #f5f5f7;
+      border-color: #d2d2d7;
+    }
+
+    .history-item-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .history-item-school {
+      font-size: 12px;
+      color: #a1a1a6;
+    }
+
+    /* ============= 右侧聊天区 ============= */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
 
     .chat-header {
       padding: 24px 40px;
@@ -174,8 +258,17 @@
       gap: 6px;
     }
 
-    .chat-header-title { font-size: 24px; font-weight: 600; color: #1d1d1f; }
-    .chat-header-subtitle { font-size: 13px; color: #a1a1a6; }
+    .chat-header-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 6px;
+    }
+
+    .chat-header-subtitle {
+      font-size: 13px;
+      color: #a1a1a6;
+    }
 
     .messages-container {
       flex: 1;
@@ -187,8 +280,17 @@
       background: white;
     }
 
-    .message { display: flex; flex-direction: column; gap: 8px; animation: slideIn 0.3s ease-out; }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     .message.user { align-items: flex-end; }
     .message.assistant { align-items: flex-start; }
@@ -200,39 +302,56 @@
       font-size: 15px;
       line-height: 1.5;
       word-wrap: break-word;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .message.user .message-bubble {
-      background: #000000; color: white;
+      background: #000000;
+      color: white;
       border-bottom-right-radius: 4px;
     }
+
     .message.assistant .message-bubble {
-      background: #f5f5f7; color: #1d1d1f;
+      background: #f5f5f7;
+      color: #1d1d1f;
       border-bottom-left-radius: 4px;
     }
 
-    .message-time { font-size: 12px; color: #a1a1a6; }
+    .message-time {
+      font-size: 12px;
+      color: #a1a1a6;
+    }
 
     .loading-dots { display: flex; gap: 4px; }
-    .loading-dot { width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%; animation: bounce 1.4s infinite; }
+    .loading-dot {
+      width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
     .loading-dot:nth-child(2) { animation-delay: 0.2s; }
     .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
 
+    @keyframes bounce {
+      0%, 80%, 100% { opacity: 0.3; }
+      40% { opacity: 1; }
+    }
+
+    /* ============= 空状态 ============= */
     .empty-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100%; gap: 24px; color: #a1a1a6; text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 24px;
+      color: #a1a1a6;
+      text-align: center;
     }
+
     .empty-icon { font-size: 48px; opacity: 0.5; }
-    .empty-text { font-size: 15px; max-width: 360px; }
+    .empty-text { font-size: 15px; max-width: 420px; }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 6px;
-    }
-
+    /* ============= 统计卡片 ============= */
     .stats-card {
       background: white;
       border: 1px solid #e5e5e7;
@@ -241,37 +360,100 @@
     }
 
     .stat-row {
-      display: flex; justify-content: space-between; padding: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
       border-bottom: 1px solid #f5f5f7;
       font-size: 13px;
     }
+
     .stat-row:last-child { border-bottom: none; }
     .stat-label { color: #a1a1a6; }
     .stat-value { font-weight: 700; color: #1d1d1f; }
 
-    .chart-card { padding: 16px; }
-    .chart-title { font-size: 13px; color: #666; font-weight: 600; margin-bottom: 10px; }
-    canvas { width: 100%; height: 220px; display: block; background: #ffffff; border-radius: 10px; }
+    .chart-title {
+      font-size: 13px;
+      color: #666666;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
 
-    /* 响应式 */
+    /* report_table */
+    .report-block {
+      background: #fafafa;
+      border: 1px solid #e5e5e7;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      color: #1d1d1f;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    /* ============= Table (stats) ============= */
+    .stats-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .stats-mini-table {
+      display: grid;
+      grid-template-columns: 80px 1fr 1fr 80px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .cell {
+      font-size: 13px;
+      padding: 6px 0;
+    }
+
+    .cell.h {
+      color: #a1a1a6;
+      font-weight: 700;
+      font-size: 12px;
+      border-bottom: 1px solid #f5f5f7;
+      padding-bottom: 8px;
+    }
+
+    .cell.v {
+      color: #1d1d1f;
+      font-weight: 600;
+    }
+
+    .cell.v2 {
+      color: #666666;
+      font-weight: 500;
+    }
+
+    /* ============= 响应式 ============= */
     @media (max-width: 1200px) {
       .sidebar { width: 320px; }
       .search-panel { padding: 24px 20px; }
       .chat-header { padding: 20px 32px; }
       .messages-container { padding: 24px 32px; }
     }
+
     @media (max-width: 768px) {
       .header { padding: 0 20px; }
-      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #f5f5f7; max-height: 240px; }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #f5f5f7;
+        max-height: 240px;
+      }
       .main { flex-direction: column; }
-      .chat-area { flex: 1; }
       .message-bubble { max-width: 90%; }
       .chat-header { padding: 16px 20px; }
       .messages-container { padding: 16px 20px; }
-      .search-actions { gap: 10px; }
       .search-button { width: 96px; }
+      .search-actions { gap: 10px; }
     }
 
+    /* ============= 滚动条 ============= */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
@@ -281,6 +463,7 @@
 
 <body>
   <div class="container">
+    <!-- 顶部导航栏 -->
     <div class="header">
       <div class="logo">
         <div class="logo-icon">◆</div>
@@ -294,6 +477,7 @@
       </div>
     </div>
 
+    <!-- 主内容区 -->
     <div class="main">
       <!-- 左侧面板 -->
       <div class="sidebar">
@@ -305,17 +489,19 @@
             <div class="search-box">
               <div class="input-group">
                 <label class="input-label">研究者信息</label>
+
                 <div class="search-actions">
                   <div class="input-wrapper">
                     <input
                       type="text"
                       id="searchInput"
-                      placeholder="例如：guozhen zhang nju"
+                      placeholder="例如：zhihua zhou nju"
                       autocomplete="off"
-                    />
+                    >
                   </div>
-                  <button id="searchBtn" class="search-button" type="button">搜索</button>
+                  <button id="searchBtn" type="button" class="search-button">搜索</button>
                 </div>
+
                 <div class="input-hint">Enter the name and school</div>
               </div>
             </div>
@@ -346,301 +532,341 @@
     </div>
   </div>
 
- <script>
-  const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
+  <script>
+    // ================== 配置：这里填你的 worker 域名 ==================
+    // 注意：你之前是 weathered-lab-9d3f.8f3va2ehrl.workers.dev 这种
+    const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
 
-  let isLoading = false;
-  let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
+    // ================== 状态管理 ==================
+    let isLoading = false;
+    let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
 
-  const searchInput = document.getElementById("searchInput");
-  const searchBtn = document.getElementById("searchBtn");
-  const messagesContainer = document.getElementById("messagesContainer");
-  const chatTitle = document.getElementById("chatTitle");
-  const chatSubtitle = document.getElementById("chatSubtitle");
-  const historyList = document.getElementById("historyList");
+    // ================== DOM ==================
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const messagesContainer = document.getElementById("messagesContainer");
+    const chatTitle = document.getElementById("chatTitle");
+    const chatSubtitle = document.getElementById("chatSubtitle");
+    const historyList = document.getElementById("historyList");
 
-  function init() {
-    renderHistory();
-    searchInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !isLoading) performSearch();
-    });
-    searchBtn.addEventListener("click", performSearch);
-  }
-
-  function setLoading(loading) {
-    isLoading = loading;
-    if (loading) {
-      searchBtn.classList.add("loading");
-      searchBtn.textContent = "处理中...";
-    } else {
-      searchBtn.classList.remove("loading");
-      searchBtn.textContent = "搜索";
-    }
-  }
-
-  function addMessage(text, sender) {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = `message ${sender}`;
-
-    const bubble = document.createElement("div");
-    bubble.className = "message-bubble";
-    bubble.textContent = String(text);
-
-    const time = document.createElement("div");
-    time.className = "message-time";
-    time.textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-
-    messageDiv.appendChild(bubble);
-    messageDiv.appendChild(time);
-
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  function addLoadingMessage() {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message assistant";
-    messageDiv.id = "loadingMessage";
-
-    const bubble = document.createElement("div");
-    bubble.className = "message-bubble";
-
-    const dots = document.createElement("div");
-    dots.className = "loading-dots";
-    dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
-
-    bubble.appendChild(dots);
-    messageDiv.appendChild(bubble);
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  function removeLoadingMessage() {
-    const el = document.getElementById("loadingMessage");
-    if (el) el.remove();
-  }
-
-  function parsePayload(text) {
-    // n8n/worker 可能返回纯 JSON，也可能返回 JSON 字符串；这里统一处理
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return { payload: null, raw: text };
-    }
-
-    if (Array.isArray(parsed)) return { payload: parsed[0], raw: text };
-    if (parsed && typeof parsed === "object") return { payload: parsed, raw: text };
-    return { payload: null, raw: text };
-  }
-
-  async function performSearch() {
-    const text = (searchInput.value || "").trim();
-    if (!text) return alert("请输入研究者信息");
-
-    if (isLoading) return;
-    setLoading(true);
-
-    addToHistory(text);
-    messagesContainer.innerHTML = "";
-    addMessage(text, "user");
-    addLoadingMessage();
-
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+    function init() {
+      renderHistory();
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !isLoading) performSearch();
       });
-
-      const raw = await res.text();
-      const { payload } = parsePayload(raw);
-
-      removeLoadingMessage();
-
-      if (!res.ok) {
-        addMessage("请求失败：HTTP " + res.status, "assistant");
-        if (raw) addPreBlock("返回内容（原样）：\n" + raw);
-        return;
-      }
-
-      if (!payload) {
-        addMessage("返回内容不是有效 JSON（或为空）", "assistant");
-        addPreBlock("原始返回：\n" + raw);
-        return;
-      }
-
-      renderN8nResult(payload);
-    } catch (e) {
-      removeLoadingMessage();
-      addMessage("请求失败：" + e.message, "assistant");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function renderN8nResult(data) {
-    // 标题
-    const title = data.target_scholar || data.author_name || "评估结果";
-    const sub = data.university || data.university_name || "科研人才 mapping 统计";
-    chatTitle.textContent = "评估结果：" + title;
-    chatSubtitle.textContent = sub;
-
-    // 基本统计
-    if (data.total_papers != null || data.identified_count != null || data.need_ai_count != null) {
-      addStatsCard({
-        rows: [
-          { label: "总论文数", value: data.total_papers ?? 0 },
-          { label: "已识别数量", value: data.identified_count ?? 0 },
-          { label: "需要 AI 统计", value: data.need_ai_count ?? 0 }
-        ]
-      });
-    } else {
-      addMessage("已获取评估结果（见下方详情）", "assistant");
+      searchBtn.addEventListener("click", performSearch);
     }
 
-    // stats 详细（A/B/C/NON）
-    if (data.stats && typeof data.stats === "object") {
+    function setLoading(loading) {
+      isLoading = loading;
+      if (loading) {
+        searchBtn.classList.add("loading");
+        searchBtn.textContent = "处理中...";
+      } else {
+        searchBtn.classList.remove("loading");
+        searchBtn.textContent = "搜索";
+      }
+    }
+
+    function nowTime() {
+      return new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+      bubble.textContent = String(text);
+
+      const time = document.createElement("div");
+      time.className = "message-time";
+      time.textContent = nowTime();
+
+      messageDiv.appendChild(bubble);
+      messageDiv.appendChild(time);
+
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addLoadingMessage() {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "message assistant";
+      messageDiv.id = "loadingMessage";
+
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+
+      const dots = document.createElement("div");
+      dots.className = "loading-dots";
+      dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+
+      bubble.appendChild(dots);
+      messageDiv.appendChild(bubble);
+
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeLoadingMessage() {
+      const el = document.getElementById("loadingMessage");
+      if (el) el.remove();
+    }
+
+    function addStatsCard(rows) {
+      const card = document.createElement("div");
+      card.className = "stats-card";
+
+      card.innerHTML = rows.map(r => `
+        <div class="stat-row">
+          <span class="stat-label">${escapeHtml(r.label)}</span>
+          <span class="stat-value">${escapeHtml(String(r.value))}</span>
+        </div>
+      `).join("");
+
+      messagesContainer.appendChild(card);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addStatsDetailCard(stats) {
+      const card = document.createElement("div");
+      card.className = "stats-card";
+
       const keys = ["A", "B", "C", "NON"];
-      addTableCard(keys.map(k => {
-        const s = data.stats[k] || {};
-        return {
-          label: k,
-          type: s.type || "-",
-          level: s.level || "-",
-          count: s.count ?? 0
-        };
-      }));
+      const title = document.createElement("div");
+      title.className = "chart-title";
+      title.textContent = "CCF 等级分布（来自 n8n stats）";
+
+      const grid = document.createElement("div");
+      grid.className = "stats-mini-table";
+
+      const headers = ["等级", "类型", "层级", "数量"];
+      headers.forEach((h) => {
+        const cell = document.createElement("div");
+        cell.className = "cell h";
+        cell.textContent = h;
+        grid.appendChild(cell);
+      });
+
+      keys.forEach((k) => {
+        const s = stats && stats[k] ? stats[k] : {};
+        const type = s.type ?? "-";
+        const level = s.level ?? "-";
+        const count = s.count ?? 0;
+
+        const c1 = document.createElement("div");
+        c1.className = "cell v2"; c1.textContent = k;
+        const c2 = document.createElement("div");
+        c2.className = "cell v2"; c2.textContent = type;
+        const c3 = document.createElement("div");
+        c3.className = "cell v2"; c3.textContent = level;
+        const c4 = document.createElement("div");
+        c4.className = "cell v"; c4.textContent = String(count);
+
+        grid.appendChild(c1);
+        grid.appendChild(c2);
+        grid.appendChild(c3);
+        grid.appendChild(c4);
+      });
+
+      card.appendChild(title);
+      card.appendChild(grid);
+
+      messagesContainer.appendChild(card);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // report_table（你的截图里那种整表文本）
-    if (data.report_table) {
-      addPreBlock("报告表：\n" + data.report_table);
+    function addReportTable(reportTable) {
+      const block = document.createElement("div");
+      block.className = "report-block";
+      block.textContent = String(reportTable);
+      messagesContainer.appendChild(block);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-  }
 
-  function addStatsCard({ rows }) {
-    const card = document.createElement("div");
-    card.className = "stats-card";
+    function parseWorkerResponse(rawText) {
+      // 你的 n8n 输出是数组：[{ ... }]
+      // worker 通常会把响应当成 text 返回，所以这里先 JSON.parse
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        return { ok: false, error: "返回内容不是有效 JSON", rawText };
+      }
 
-    card.innerHTML = rows.map(r => `
-      <div class="stat-row">
-        <span class="stat-label">${escapeHtml(r.label)}</span>
-        <span class="stat-value">${escapeHtml(String(r.value))}</span>
-      </div>
-    `).join("");
+      // 如果是数组，取第 0 个
+      if (Array.isArray(parsed)) {
+        return { ok: true, payload: parsed[0], raw: parsed };
+      }
+      // 如果是对象，直接用
+      if (parsed && typeof parsed === "object") {
+        return { ok: true, payload: parsed, raw: parsed };
+      }
 
-    messagesContainer.appendChild(card);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
+      return { ok: false, error: "JSON 结构不符合预期", rawText };
+    }
 
-  function addTableCard(items) {
-    const card = document.createElement("div");
-    card.className = "stats-card";
-    const header = document.createElement("div");
-    header.style.fontWeight = "700";
-    header.style.marginBottom = "10px";
-    header.style.color = "#1d1d1f";
-    header.textContent = "CCF 分布详情（来自 n8n stats）";
-    card.appendChild(header);
+    async function performSearch() {
+      const text = (searchInput.value || "").trim();
+      if (!text) return alert("请输入研究者信息");
+      if (isLoading) return;
 
-    const table = document.createElement("div");
-    table.style.display = "grid";
-    table.style.gridTemplateColumns = "70px 1fr 1fr 80px";
-    table.style.gap = "8px 10px";
+      setLoading(true);
 
-    // 表头
-    ["等级", "类型", "层级", "数量"].forEach((t) => {
-      const th = document.createElement("div");
-      th.style.color = "#a1a1a6";
-      th.style.fontSize = "12px";
-      th.textContent = t;
-      table.appendChild(th);
-    });
+      addToHistory(text);
+      messagesContainer.innerHTML = "";
+      addMessage(text, "user");
+      addLoadingMessage();
 
-    items.forEach((it) => {
-      const cells = [it.label, it.type, it.level, String(it.count)];
-      cells.forEach((c, idx) => {
-        const td = document.createElement("div");
-        td.style.color = idx === 3 ? "#1d1d1f" : "#666";
-        td.style.fontSize = "13px";
-        td.style.fontWeight = idx === 3 ? "700" : "500";
-        td.textContent = String(c);
-        table.appendChild(td);
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // 必须和你 n8n Code 里取的字段一致（你前面 n8n 用的是 body.message）
+          body: JSON.stringify({ message: text })
+        });
+
+        const raw = await res.text();
+        const parsed = parseWorkerResponse(raw);
+
+        removeLoadingMessage();
+
+        if (!res.ok) {
+          addMessage("请求失败：HTTP " + res.status, "assistant");
+          if (raw) addMessage("返回： " + raw.slice(0, 500), "assistant");
+          chatTitle.textContent = "请求失败";
+          chatSubtitle.textContent = "请检查网络或 Worker/N8N 配置";
+          return;
+        }
+
+        if (!parsed.ok || !parsed.payload) {
+          addMessage("返回结果解析失败，请稍后重试", "assistant");
+          if (parsed.error) addMessage(parsed.error, "assistant");
+          if (raw) addMessage("原始返回： " + raw.slice(0, 500), "assistant");
+          return;
+        }
+
+        const data = parsed.payload;
+
+        renderN8nResult(data);
+
+      } catch (e) {
+        removeLoadingMessage();
+        addMessage("请求失败：" + e.message, "assistant");
+        chatTitle.textContent = "网络错误";
+        chatSubtitle.textContent = "请稍后重试";
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderN8nResult(data) {
+      // 标题区域
+      const title = data.target_scholar || data.author_name || "评估结果";
+      const sub = data.university || data.university_name || "科研人才 mapping 统计";
+      chatTitle.textContent = "评估结果：" + title;
+      chatSubtitle.textContent = sub;
+
+      // 基本统计
+      const rows = [];
+      if (data.total_papers != null) rows.push({ label: "总论文数", value: data.total_papers });
+      if (data.identified_count != null) rows.push({ label: "已识别数量", value: data.identified_count });
+      if (data.need_ai_count != null) rows.push({ label: "需要 AI 统计", value: data.need_ai_count });
+
+      if (rows.length) addStatsCard(rows);
+
+      // stats 详情
+      if (data.stats && typeof data.stats === "object") {
+        addStatsDetailCard(data.stats);
+      } else {
+        addMessage("n8n 未返回 stats 统计明细", "assistant");
+      }
+
+      // report_table
+      if (data.report_table) {
+        addReportTable(data.report_table);
+      } else {
+        addMessage("n8n 未返回 report_table", "assistant");
+      }
+
+      // 额外兜底：如果有 need_ai_count / 其他字段不展示，可按需补
+    }
+
+    // ================== 历史记录 ==================
+    function parseQueryForHistory(query) {
+      const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
+      const name = parts[0] || query;
+      const university = parts.slice(1).join(" ");
+      return { name, university };
+    }
+
+    function addToHistory(query) {
+      const { name, university } = parseQueryForHistory(query);
+
+      const item = {
+        name,
+        university,
+        query,
+        timestamp: new Date().toISOString()
+      };
+
+      // 去重 + 置顶
+      searchHistory = searchHistory.filter(h => h.query !== query);
+      searchHistory.unshift(item);
+      searchHistory = searchHistory.slice(0, 10);
+
+      localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+
+      if (!searchHistory.length) {
+        const empty = document.createElement("div");
+        empty.style.color = "#a1a1a6";
+        empty.style.fontSize = "12px";
+        empty.style.padding = "6px 2px";
+        empty.textContent = "暂无历史记录";
+        historyList.appendChild(empty);
+        return;
+      }
+
+      searchHistory.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+
+        const name = item.name || "";
+        const uni = item.university || "";
+
+        div.innerHTML = `
+          <div class="history-item-name">${escapeHtml(name)}</div>
+          <div class="history-item-school">${escapeHtml(uni)}</div>
+        `;
+
+        div.addEventListener("click", () => {
+          searchInput.value = item.query;
+          performSearch();
+        });
+
+        historyList.appendChild(div);
       });
-    });
+    }
 
-    card.appendChild(table);
-    messagesContainer.appendChild(card);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
+    // ================== 工具函数 ==================
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[m]));
+    }
 
-  function addPreBlock(text) {
-    const pre = document.createElement("pre");
-    pre.style.whiteSpace = "pre-wrap";
-    pre.style.wordBreak = "break-word";
-    pre.style.background = "#fafafa";
-    pre.style.border = "1px solid #e5e5e7";
-    pre.style.borderRadius = "12px";
-    pre.style.padding = "16px";
-    pre.style.marginTop = "6px";
-    pre.style.color = "#1d1d1f";
-    pre.style.fontSize = "13px";
-    pre.textContent = String(text);
-
-    messagesContainer.appendChild(pre);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  function addToHistory(query) {
-    const { name, university } = parseQueryForHistory(query);
-
-    const item = { name, university, query, timestamp: new Date().toISOString() };
-    searchHistory = searchHistory.filter(h => h.query !== query);
-    searchHistory.unshift(item);
-    searchHistory = searchHistory.slice(0, 10);
-
-    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
-    renderHistory();
-  }
-
-  function parseQueryForHistory(query) {
-    const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
-    const name = parts[0] || query;
-    const university = parts.slice(1).join(" ");
-    return { name, university };
-  }
-
-  function renderHistory() {
-    historyList.innerHTML = "";
-    searchHistory.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "history-item";
-      const name = escapeHtml(item.name || "");
-      const uni = escapeHtml(item.university || "");
-      div.innerHTML = `
-        <div class="history-item-name">${name}</div>
-        <div class="history-item-school">${uni}</div>
-      `;
-      div.addEventListener("click", () => {
-        searchInput.value = item.query;
-        performSearch();
-      });
-      historyList.appendChild(div);
-    });
-  }
-
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[m]));
-  }
-
-  init();
-</script>
+    init();
+  </script>
 </body>
 </html>
