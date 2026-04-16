@@ -537,12 +537,12 @@
                                 <input 
                                     type="text" 
                                     id="searchInput"
-                                    placeholder="例如：zhihua zhou nju"
+                                    placeholder="例如：张三 北京大学"
                                     autocomplete="off"
                                 >
-                                <div class="input-hint">Enter the name and school</div>
+                                <div class="input-hint">输入姓名和学校，按 Enter 搜索</div>
                             </div>
-                           <button id="searchBtn" type="button">搜索</button>
+                            <button class="search-button" id="searchButton">开始评估</button>
                         </div>
                     </div>
 
@@ -560,7 +560,7 @@
             <div class="chat-area">
                 <div class="chat-header">
                     <div class="chat-header-title" id="chatTitle">欢迎使用</div>
-                    <div class="chat-header-subtitle" id="chatSubtitle">在左侧输入相关研究者信息开始评估</div>
+                    <div class="chat-header-subtitle" id="chatSubtitle">在左侧输入研究者信息开始评估</div>
                 </div>
                 <div class="messages-container" id="messagesContainer">
                     <div class="empty-state">
@@ -572,258 +572,265 @@
         </div>
     </div>
 
-    <script>
-        // ============= 配置 =============
-        const N8N_WEBHOOK_URL = 'http://weathered-lab-9d3f.8f3va2ehrl.workers.dev'; // 替换为你的 n8n Webhook URL
+   <script>
+    // ============= 配置 =============
+    const N8N_WEBHOOK_URL = 'YOUR_N8N_WEBHOOK_URL_HERE'; // 替换为你的 URL
 
-        // ============= 状态管理 =============
-        let isLoading = false;
-        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    // ============= 状态管理 =============
+    let isLoading = false;
+    let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
 
-        // ============= DOM 元素 =============
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const chatTitle = document.getElementById('chatTitle');
-        const chatSubtitle = document.getElementById('chatSubtitle');
-        const historyList = document.getElementById('historyList');
+    // ============= DOM 元素 =============
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const chatTitle = document.getElementById('chatTitle');
+    const chatSubtitle = document.getElementById('chatSubtitle');
+    const historyList = document.getElementById('historyList');
 
-        // ============= 初始化 =============
-        function init() {
-            renderHistory();
-            setupEventListeners();
-        }
+    // ============= 初始化 =============
+    function init() {
+        console.log('🚀 应用已启动');
+        console.log('📍 Webhook URL:', N8N_WEBHOOK_URL);
+        renderHistory();
+        setupEventListeners();
+    }
 
-        // ============= 事件监听 =============
-        function setupEventListeners() {
-            // Enter 键搜索
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !isLoading) {
-                    performSearch();
-                }
-            });
-
-            // 按钮点击
-            searchButton.addEventListener('click', performSearch);
-        }
-
-        // ============= 执行搜索 =============
-        async function performSearch() {
-            const query = searchInput.value.trim();
-            
-            if (!query) {
-                alert('请输入研究者信息');
-                return;
+    // ============= 事件监听 =============
+    function setupEventListeners() {
+        searchInput.addEventListener('keypress', (e) => {
+            console.log('🎹 按键:', e.key);
+            if (e.key === 'Enter' && !isLoading) {
+                performSearch();
             }
+        });
 
-            if (isLoading) return;
-
-            isLoading = true;
-            searchButton.classList.add('loading');
-            searchButton.textContent = '处理中...';
-
-            // 添加到历史记录
-            addToHistory(query);
-
-            // 清空消息容器
-            messagesContainer.innerHTML = '';
-
-            // 显示用户消息
-            addMessage(query, 'user');
-
-            // 显示加载动画
-            addLoadingMessage();
-
-            try {
-                // 调用 n8n Webhook
-                const response = await fetch(http://weathered-lab-9d3f.8f3va2ehrl.workers.dev, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chatMessage: query,
-                        sessionId: generateSessionId()
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // 移除加载消息
-                removeLoadingMessage();
-
-                // 显示响应
-                if (data.response || data.analysis) {
-                    const responseText = data.response || data.analysis;
-                    addMessage(responseText, 'assistant');
-
-                    // 更新标题
-                    const author = data.author || '评估结果';
-                    chatTitle.textContent = author;
-                    chatSubtitle.textContent = `${data.university || ''}的学术评估`;
-
-                    // 显示统计卡片
-                    if (data.statistics) {
-                        addStatsCard(data.statistics);
-                    }
-                } else {
-                    addMessage('未能获取评估结果，请重试', 'assistant');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                removeLoadingMessage();
-                addMessage(`出错: ${error.message}。请检查 n8n Webhook URL 是否正确配置。`, 'assistant');
-            } finally {
-                isLoading = false;
-                searchButton.classList.remove('loading');
-                searchButton.textContent = '开始评估';
-            }
-        }
-
-        // ============= 消息相关函数 =============
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = text;
-
-            const time = document.createElement('div');
-            time.className = 'message-time';
-            time.textContent = new Date().toLocaleTimeString('zh-CN', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-
-            messageDiv.appendChild(bubble);
-            messageDiv.appendChild(time);
-            messagesContainer.appendChild(messageDiv);
-
-            // 自动滚动到底部
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function addLoadingMessage() {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message assistant';
-            messageDiv.id = 'loadingMessage';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-
-            const dots = document.createElement('div');
-            dots.className = 'loading-dots';
-            dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
-
-            bubble.appendChild(dots);
-            messageDiv.appendChild(bubble);
-            messagesContainer.appendChild(messageDiv);
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function removeLoadingMessage() {
-            const loadingMsg = document.getElementById('loadingMessage');
-            if (loadingMsg) {
-                loadingMsg.remove();
-            }
-        }
-
-        function addStatsCard(stats) {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'stats-card';
-
-            const rows = [
-                { label: '总论文数', value: stats.total_papers || 0 },
-                { label: 'CCF-A 一作/共一', value: stats.ccf_a_first_author || 0 + ' 篇' },
-                { label: 'CCF-A 其他身份', value: stats.ccf_a_other_author || 0 + ' 篇' },
-                { label: '非 CCF-A', value: stats.non_ccf_a || 0 + ' 篇' }
-            ];
-
-            cardDiv.innerHTML = rows.map(row => `
-                <div class="stat-row">
-                    <span class="stat-label">${row.label}</span>
-                    <span class="stat-value">${row.value}</span>
-                </div>
-            `).join('');
-
-            messagesContainer.appendChild(cardDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // ============= 历史记录相关 =============
-        function addToHistory(query) {
-            // 从查询中提取名字和学校
-            const parts = query.split(/[\s，,]+/);
-            if (parts.length >= 2) {
-                const item = {
-                    name: parts[0],
-                    university: parts[1],
-                    query: query,
-                    timestamp: new Date().toISOString()
-                };
-
-                // 避免重复
-                searchHistory = searchHistory.filter(h => h.query !== query);
-                searchHistory.unshift(item);
-
-                // 只保留最近 10 条
-                searchHistory = searchHistory.slice(0, 10);
-
-                localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-                renderHistory();
-            }
-        }
-
-        function renderHistory() {
-            historyList.innerHTML = searchHistory.map((item, index) => `
-                <div class="history-item" onclick="selectFromHistory('${item.query}')">
-                    <div class="history-item-name">${item.name}</div>
-                    <div class="history-item-school">${item.university}</div>
-                </div>
-            `).join('');
-        }
-
-        function selectFromHistory(query) {
-            searchInput.value = query;
+        searchButton.addEventListener('click', () => {
+            console.log('🖱️ 点击搜索按钮');
             performSearch();
+        });
+    }
+
+    // ============= 执行搜索 =============
+    async function performSearch() {
+        const query = searchInput.value.trim();
+        
+        if (!query) {
+            alert('请输入研究者信息');
+            return;
         }
 
-        // ============= 工具函数 =============
-        function generateSessionId() {
-            return 'session_' + Math.random().toString(36).substr(2, 9);
+        if (isLoading) return;
+
+        isLoading = true;
+        searchButton.classList.add('loading');
+        searchButton.textContent = '处理中...';
+
+        addToHistory(query);
+        messagesContainer.innerHTML = '';
+        addMessage(query, 'user');
+        addLoadingMessage();
+
+        // ========== 详细日志 ==========
+        console.group('📡 n8n 请求详情');
+        console.log('时间:', new Date().toLocaleTimeString());
+        console.log('用户输入:', query);
+        console.log('Webhook URL:', N8N_WEBHOOK_URL);
+        console.log('Session ID:', generateSessionId());
+        console.groupEnd();
+
+        try {
+            const requestPayload = {
+                chatMessage: query,
+                sessionId: generateSessionId()
+            };
+
+            console.log('📤 发送请求体:', requestPayload);
+
+            const response = await fetch(N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestPayload)
+            });
+
+            console.group('📨 响应详情');
+            console.log('状态码:', response.status);
+            console.log('状态文本:', response.statusText);
+            console.log('Content-Type:', response.headers.get('Content-Type'));
+            console.groupEnd();
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ HTTP 错误:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const responseText = await response.text();
+            console.log('📥 原始响应:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('✅ 解析后的数据:', data);
+            } catch (e) {
+                console.error('❌ JSON 解析失败:', e);
+                console.log('尝试显示原始文本...');
+                removeLoadingMessage();
+                addMessage('服务器返回无效的 JSON:\n' + responseText, 'assistant');
+                throw e;
+            }
+
+            removeLoadingMessage();
+
+            if (data.response || data.analysis) {
+                const responseText = data.response || data.analysis;
+                addMessage(responseText, 'assistant');
+
+                const author = data.author || '评估结果';
+                chatTitle.textContent = author;
+                chatSubtitle.textContent = `${data.university || ''}的学术评估`;
+
+                if (data.statistics) {
+                    addStatsCard(data.statistics);
+                }
+
+                console.log('✅ 响应已显示');
+            } else {
+                console.warn('⚠️ 响应中缺少 response 或 analysis 字段');
+                addMessage('响应数据: ' + JSON.stringify(data, null, 2), 'assistant');
+            }
+
+        } catch (error) {
+            console.group('❌ 错误详情');
+            console.error('消息:', error.message);
+            console.error('堆栈:', error.stack);
+            console.error('对象:', error);
+            console.groupEnd();
+            
+            removeLoadingMessage();
+            addMessage(`❌ 错误: ${error.message}\n\n请查看浏览器控制台（F12）获取更多信息`, 'assistant');
+        } finally {
+            isLoading = false;
+            searchButton.classList.remove('loading');
+            searchButton.textContent = '开始评估';
+            console.log('✅ 请求处理完成\n');
         }
+    }
 
-        // ============= 启动应用 =============
-        init();
-    </script>
-    <script>
-document.getElementById("searchBtn").onclick = async function () {
-  const text = (document.getElementById("searchInput")?.value || "").trim();
-  if (!text) {
-    alert("请先输入内容");
-    return;
-  }
+    // ============= 消息函数 =============
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
 
-  try {
-    const res = await fetch("http://weathered-lab-9d3f.8f3va2ehrl.workers.dev", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = text;
 
-    const result = await res.text();
-    alert("返回结果：" + result);
-  } catch (e) {
-    alert("请求失败：" + e.message);
-  }
-};
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = new Date().toLocaleTimeString('zh-CN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+
+        messageDiv.appendChild(bubble);
+        messageDiv.appendChild(time);
+        messagesContainer.appendChild(messageDiv);
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addLoadingMessage() {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant';
+        messageDiv.id = 'loadingMessage';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+
+        const dots = document.createElement('div');
+        dots.className = 'loading-dots';
+        dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+
+        bubble.appendChild(dots);
+        messageDiv.appendChild(bubble);
+        messagesContainer.appendChild(messageDiv);
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeLoadingMessage() {
+        const loadingMsg = document.getElementById('loadingMessage');
+        if (loadingMsg) {
+            loadingMsg.remove();
+        }
+    }
+
+    function addStatsCard(stats) {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'stats-card';
+
+        const rows = [
+            { label: '总论文数', value: stats.total_papers || 0 },
+            { label: 'CCF-A 一作/共一', value: (stats.ccf_a_first_author || 0) + ' 篇' },
+            { label: 'CCF-A 其他身份', value: (stats.ccf_a_other_author || 0) + ' 篇' },
+            { label: '非 CCF-A', value: (stats.non_ccf_a || 0) + ' 篇' }
+        ];
+
+        cardDiv.innerHTML = rows.map(row => `
+            <div class="stat-row">
+                <span class="stat-label">${row.label}</span>
+                <span class="stat-value">${row.value}</span>
+            </div>
+        `).join('');
+
+        messagesContainer.appendChild(cardDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // ============= 历史记录 =============
+    function addToHistory(query) {
+        const parts = query.split(/[\s，,]+/);
+        if (parts.length >= 2) {
+            const item = {
+                name: parts[0],
+                university: parts[1],
+                query: query,
+                timestamp: new Date().toISOString()
+            };
+
+            searchHistory = searchHistory.filter(h => h.query !== query);
+            searchHistory.unshift(item);
+            searchHistory = searchHistory.slice(0, 10);
+
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+            renderHistory();
+        }
+    }
+
+    function renderHistory() {
+        historyList.innerHTML = searchHistory.map((item, index) => `
+            <div class="history-item" onclick="selectFromHistory('${item.query.replace(/'/g, "\\'")}')">
+                <div class="history-item-name">${item.name}</div>
+                <div class="history-item-school">${item.university}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectFromHistory(query) {
+        searchInput.value = query;
+        performSearch();
+    }
+
+    // ============= 工具函数 =============
+    function generateSessionId() {
+        return 'session_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // ============= 启动 =============
+    init();
 </script>
 </body>
 </html>
