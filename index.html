@@ -591,7 +591,9 @@
         // ============= 初始化 =============
         function init() {
             renderHistory();
-            setupEventListeners();
+           document.addEventListener("DOMContentLoaded", () => {
+  setupEventListeners()
+})();
         }
 
         // ============= 事件监听 =============
