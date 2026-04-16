@@ -346,450 +346,301 @@
     </div>
   </div>
 
-  <script>
-    // ================== 配置：这里填你的 worker 域名 ==================
-    const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
+ <script>
+  const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
 
-    // ================== 状态管理 ==================
-    let isLoading = false;
-    let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
+  let isLoading = false;
+  let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
 
-    // ================== DOM ==================
-    const searchInput = document.getElementById("searchInput");
-    const searchBtn = document.getElementById("searchBtn");
-    const messagesContainer = document.getElementById("messagesContainer");
-    const chatTitle = document.getElementById("chatTitle");
-    const chatSubtitle = document.getElementById("chatSubtitle");
-    const historyList = document.getElementById("historyList");
+  const searchInput = document.getElementById("searchInput");
+  const searchBtn = document.getElementById("searchBtn");
+  const messagesContainer = document.getElementById("messagesContainer");
+  const chatTitle = document.getElementById("chatTitle");
+  const chatSubtitle = document.getElementById("chatSubtitle");
+  const historyList = document.getElementById("historyList");
 
-    function init() {
-      renderHistory();
-      setupEventListeners();
+  function init() {
+    renderHistory();
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !isLoading) performSearch();
+    });
+    searchBtn.addEventListener("click", performSearch);
+  }
+
+  function setLoading(loading) {
+    isLoading = loading;
+    if (loading) {
+      searchBtn.classList.add("loading");
+      searchBtn.textContent = "处理中...";
+    } else {
+      searchBtn.classList.remove("loading");
+      searchBtn.textContent = "搜索";
+    }
+  }
+
+  function addMessage(text, sender) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${sender}`;
+
+    const bubble = document.createElement("div");
+    bubble.className = "message-bubble";
+    bubble.textContent = String(text);
+
+    const time = document.createElement("div");
+    time.className = "message-time";
+    time.textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+
+    messageDiv.appendChild(bubble);
+    messageDiv.appendChild(time);
+
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function addLoadingMessage() {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message assistant";
+    messageDiv.id = "loadingMessage";
+
+    const bubble = document.createElement("div");
+    bubble.className = "message-bubble";
+
+    const dots = document.createElement("div");
+    dots.className = "loading-dots";
+    dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+
+    bubble.appendChild(dots);
+    messageDiv.appendChild(bubble);
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function removeLoadingMessage() {
+    const el = document.getElementById("loadingMessage");
+    if (el) el.remove();
+  }
+
+  function parsePayload(text) {
+    // n8n/worker 可能返回纯 JSON，也可能返回 JSON 字符串；这里统一处理
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return { payload: null, raw: text };
     }
 
-    function setupEventListeners() {
-      searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !isLoading) performSearch();
+    if (Array.isArray(parsed)) return { payload: parsed[0], raw: text };
+    if (parsed && typeof parsed === "object") return { payload: parsed, raw: text };
+    return { payload: null, raw: text };
+  }
+
+  async function performSearch() {
+    const text = (searchInput.value || "").trim();
+    if (!text) return alert("请输入研究者信息");
+
+    if (isLoading) return;
+    setLoading(true);
+
+    addToHistory(text);
+    messagesContainer.innerHTML = "";
+    addMessage(text, "user");
+    addLoadingMessage();
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
       });
-      searchBtn.addEventListener("click", performSearch);
-    }
 
-    async function performSearch() {
-      const text = (searchInput.value || "").trim();
-      if (!text) {
-        alert("请输入研究者信息");
+      const raw = await res.text();
+      const { payload } = parsePayload(raw);
+
+      removeLoadingMessage();
+
+      if (!res.ok) {
+        addMessage("请求失败：HTTP " + res.status, "assistant");
+        if (raw) addPreBlock("返回内容（原样）：\n" + raw);
         return;
       }
-      if (isLoading) return;
 
-      isLoading = true;
-      setLoading(true);
-
-      // 写入历史
-      addToHistory(text);
-
-      // 清空右侧
-      messagesContainer.innerHTML = "";
-
-      // 用户消息
-      addMessage(text, "user");
-      addLoadingMessage();
-
-      try {
-        // 关键：n8n 侧接收的是 body.message（你前面就是这个结构）
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
-        });
-
-        const raw = await res.text();
-
-        // 尝试解析 JSON（worker/n8n 都可能返回 JSON 或纯文本）
-        let data = null;
-        try { data = JSON.parse(raw); } catch { data = null; }
-
-        // 移除加载动画
-        removeLoadingMessage();
-
-        // 展示结果
-        if (res.ok) {
-          if (data && (data.error || data.message)) {
-            // 统一错误展示
-            const errMsg = data.message ? data.message : "请求失败";
-            addMessage(errMsg, "assistant");
-            chatTitle.textContent = "评估失败";
-            chatSubtitle.textContent = "请检查输入格式或稍后重试";
-            if (data.detail) {
-              addSmallBlock("错误详情：" + String(data.detail), false);
-            }
-            return;
-          }
-
-          // 成功：更新标题
-          const titleInfo = pickTitleInfo(data);
-          chatTitle.textContent = titleInfo.title;
-          chatSubtitle.textContent = titleInfo.subtitle;
-
-          // 右侧：展示 n8n 返回的主要字段 + 图表
-          renderN8nResult(data);
-        } else {
-          addMessage("请求失败：HTTP " + res.status, "assistant");
-          if (raw) addSmallBlock("返回内容：" + raw, true);
-          chatTitle.textContent = "请求失败";
-          chatSubtitle.textContent = "HTTP " + res.status;
-        }
-      } catch (e) {
-        console.error(e);
-        removeLoadingMessage();
-        addMessage("出错：" + e.message, "assistant");
-        chatTitle.textContent = "网络错误";
-        chatSubtitle.textContent = "请稍后重试";
-      } finally {
-        isLoading = false;
-        setLoading(false);
+      if (!payload) {
+        addMessage("返回内容不是有效 JSON（或为空）", "assistant");
+        addPreBlock("原始返回：\n" + raw);
+        return;
       }
+
+      renderN8nResult(payload);
+    } catch (e) {
+      removeLoadingMessage();
+      addMessage("请求失败：" + e.message, "assistant");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderN8nResult(data) {
+    // 标题
+    const title = data.target_scholar || data.author_name || "评估结果";
+    const sub = data.university || data.university_name || "科研人才 mapping 统计";
+    chatTitle.textContent = "评估结果：" + title;
+    chatSubtitle.textContent = sub;
+
+    // 基本统计
+    if (data.total_papers != null || data.identified_count != null || data.need_ai_count != null) {
+      addStatsCard({
+        rows: [
+          { label: "总论文数", value: data.total_papers ?? 0 },
+          { label: "已识别数量", value: data.identified_count ?? 0 },
+          { label: "需要 AI 统计", value: data.need_ai_count ?? 0 }
+        ]
+      });
+    } else {
+      addMessage("已获取评估结果（见下方详情）", "assistant");
     }
 
-    function setLoading(loading) {
-      if (loading) {
-        searchBtn.classList.add("loading");
-        searchBtn.textContent = "处理中...";
-      } else {
-        searchBtn.classList.remove("loading");
-        searchBtn.textContent = "搜索";
-      }
+    // stats 详细（A/B/C/NON）
+    if (data.stats && typeof data.stats === "object") {
+      const keys = ["A", "B", "C", "NON"];
+      addTableCard(keys.map(k => {
+        const s = data.stats[k] || {};
+        return {
+          label: k,
+          type: s.type || "-",
+          level: s.level || "-",
+          count: s.count ?? 0
+        };
+      }));
     }
 
-    function addMessage(text, sender) {
-      const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${sender}`;
-
-      const bubble = document.createElement("div");
-      bubble.className = "message-bubble";
-      bubble.textContent = String(text);
-
-      const time = document.createElement("div");
-      time.className = "message-time";
-      time.textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-
-      messageDiv.appendChild(bubble);
-      messageDiv.appendChild(time);
-      messagesContainer.appendChild(messageDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // report_table（你的截图里那种整表文本）
+    if (data.report_table) {
+      addPreBlock("报告表：\n" + data.report_table);
     }
+  }
 
-    function addSmallBlock(text, isCode) {
+  function addStatsCard({ rows }) {
+    const card = document.createElement("div");
+    card.className = "stats-card";
+
+    card.innerHTML = rows.map(r => `
+      <div class="stat-row">
+        <span class="stat-label">${escapeHtml(r.label)}</span>
+        <span class="stat-value">${escapeHtml(String(r.value))}</span>
+      </div>
+    `).join("");
+
+    messagesContainer.appendChild(card);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function addTableCard(items) {
+    const card = document.createElement("div");
+    card.className = "stats-card";
+    const header = document.createElement("div");
+    header.style.fontWeight = "700";
+    header.style.marginBottom = "10px";
+    header.style.color = "#1d1d1f";
+    header.textContent = "CCF 分布详情（来自 n8n stats）";
+    card.appendChild(header);
+
+    const table = document.createElement("div");
+    table.style.display = "grid";
+    table.style.gridTemplateColumns = "70px 1fr 1fr 80px";
+    table.style.gap = "8px 10px";
+
+    // 表头
+    ["等级", "类型", "层级", "数量"].forEach((t) => {
+      const th = document.createElement("div");
+      th.style.color = "#a1a1a6";
+      th.style.fontSize = "12px";
+      th.textContent = t;
+      table.appendChild(th);
+    });
+
+    items.forEach((it) => {
+      const cells = [it.label, it.type, it.level, String(it.count)];
+      cells.forEach((c, idx) => {
+        const td = document.createElement("div");
+        td.style.color = idx === 3 ? "#1d1d1f" : "#666";
+        td.style.fontSize = "13px";
+        td.style.fontWeight = idx === 3 ? "700" : "500";
+        td.textContent = String(c);
+        table.appendChild(td);
+      });
+    });
+
+    card.appendChild(table);
+    messagesContainer.appendChild(card);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function addPreBlock(text) {
+    const pre = document.createElement("pre");
+    pre.style.whiteSpace = "pre-wrap";
+    pre.style.wordBreak = "break-word";
+    pre.style.background = "#fafafa";
+    pre.style.border = "1px solid #e5e5e7";
+    pre.style.borderRadius = "12px";
+    pre.style.padding = "16px";
+    pre.style.marginTop = "6px";
+    pre.style.color = "#1d1d1f";
+    pre.style.fontSize = "13px";
+    pre.textContent = String(text);
+
+    messagesContainer.appendChild(pre);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function addToHistory(query) {
+    const { name, university } = parseQueryForHistory(query);
+
+    const item = { name, university, query, timestamp: new Date().toISOString() };
+    searchHistory = searchHistory.filter(h => h.query !== query);
+    searchHistory.unshift(item);
+    searchHistory = searchHistory.slice(0, 10);
+
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+    renderHistory();
+  }
+
+  function parseQueryForHistory(query) {
+    const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
+    const name = parts[0] || query;
+    const university = parts.slice(1).join(" ");
+    return { name, university };
+  }
+
+  function renderHistory() {
+    historyList.innerHTML = "";
+    searchHistory.forEach(item => {
       const div = document.createElement("div");
-      div.className = "stats-card";
-      div.style.marginTop = "2px";
-      div.style.fontSize = "13px";
-      div.style.color = "#1d1d1f";
-      div.textContent = String(text);
-      if (isCode) div.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-      messagesContainer.appendChild(div);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function addLoadingMessage() {
-      const messageDiv = document.createElement("div");
-      messageDiv.className = "message assistant";
-      messageDiv.id = "loadingMessage";
-
-      const bubble = document.createElement("div");
-      bubble.className = "message-bubble";
-
-      const dots = document.createElement("div");
-      dots.className = "loading-dots";
-      dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
-
-      bubble.appendChild(dots);
-      messageDiv.appendChild(bubble);
-      messagesContainer.appendChild(messageDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function removeLoadingMessage() {
-      const loadingMsg = document.getElementById("loadingMessage");
-      if (loadingMsg) loadingMsg.remove();
-    }
-
-    function renderN8nResult(data) {
-      if (!data || typeof data !== "object") {
-        addMessage("返回结果不是有效 JSON。", "assistant");
-        return;
-      }
-
-      // 1) 顶部简单摘要（如果 n8n 给了你截图里的字段）
-      const summary = [];
-      if (data.target_scholar) summary.push("学者：" + data.target_scholar);
-      if (data.total_papers != null) summary.push("总论文数：" + data.total_papers);
-      if (data.identified_count != null) summary.push("已识别数量：" + data.identified_count);
-      if (summary.length) {
-        addMessage(summary.join("，"), "assistant");
-      } else {
-        // 兜底：把整个 JSON 简短展示
-        addMessage("已获取评估结果（见下方统计）。", "assistant");
-      }
-
-      // 2) 统计卡片（尽量兼容你可能的字段命名）
-      const statsCard = buildStatsCardData(data);
-      if (statsCard) renderStatsCard(statsCard);
-
-      // 3) 绘图：如果 n8n 返回 stats 对象（例如 A/B/C/NON -> count/type/level）
-      if (data.stats && typeof data.stats === "object") {
-        renderStatsChart(data.stats);
-      }
-
-      // 4) 如果你还需要把 n8n 的原始输出展示出来（调试用）
-      // 你也可以注释掉这一段
-      if (data.need_ai_stats != null || data.stats) {
-        const debug = {
-          // 只取你可能关心的字段，避免输出太长
-          target_scholar: data.target_scholar,
-          total_papers: data.total_papers,
-          identified_count: data.identified_count,
-          need_ai_stats: data.need_ai_stats,
-          stats: data.stats
-        };
-        addSmallBlock("结果原始数据（部分）：\n" + JSON.stringify(debug, null, 2), true);
-      }
-    }
-
-    function pickTitleInfo(data) {
-      // 优先你截图里的 target_scholar
-      if (data.target_scholar) {
-        return {
-          title: "评估结果：" + data.target_scholar,
-          subtitle: (data.university ? data.university : "科研人才 mapping 统计")
-        };
-      }
-
-      // 否则使用 author_name/university（你 n8n code 节点可能返回）
-      if (data.author_name || data.university) {
-        return {
-          title: "评估结果：" + (data.author_name || "研究者"),
-          subtitle: (data.university ? data.university : "科研人才 mapping 统计")
-        };
-      }
-
-      return { title: "评估结果", subtitle: "已完成统计" };
-    }
-
-    function buildStatsCardData(data) {
-      // 支持你截图里的字段优先
-      if (data.total_papers != null || data.identified_count != null) {
-        return {
-          rows: [
-            { label: "总论文数", value: data.total_papers ?? 0 },
-            { label: "已识别数量", value: data.identified_count ?? 0 },
-            { label: "需要 AI 统计", value: data.need_ai_stats === undefined ? "-" : String(data.need_ai_stats) }
-          ]
-        };
-      }
-
-      // 如果有下面这种统计字段，也兼容一下（可选）
-      if (data.total_papers != null || data.non_ccf_a != null) {
-        return {
-          rows: [
-            { label: "总论文数", value: data.total_papers ?? 0 },
-            { label: "非 CCF-A", value: data.non_ccf_a ?? 0 },
-          ]
-        };
-      }
-
-      return null;
-    }
-
-    function renderStatsCard(card) {
-      const cardDiv = document.createElement("div");
-      cardDiv.className = "stats-card";
-
-      cardDiv.innerHTML = card.rows.map(r => `
-        <div class="stat-row">
-          <span class="stat-label">${escapeHtml(r.label)}</span>
-          <span class="stat-value">${escapeHtml(String(r.value))}</span>
-        </div>
-      `).join("");
-
-      messagesContainer.appendChild(cardDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function renderStatsChart(statsObj) {
-      const order = ["A", "B", "C", "NON", "Non", "non", ""];
-
-      const entries = Object.keys(statsObj).map((k) => {
-        const v = statsObj[k] || {};
-        const countRaw = v.count ?? v.num ?? v.value ?? 0;
-        const count = Number(countRaw) || 0;
-        return { key: k, count, v };
+      div.className = "history-item";
+      const name = escapeHtml(item.name || "");
+      const uni = escapeHtml(item.university || "");
+      div.innerHTML = `
+        <div class="history-item-name">${name}</div>
+        <div class="history-item-school">${uni}</div>
+      `;
+      div.addEventListener("click", () => {
+        searchInput.value = item.query;
+        performSearch();
       });
+      historyList.appendChild(div);
+    });
+  }
 
-      // 按你常见顺序排序；未知 key 放后面
-      entries.sort((a, b) => {
-        const ia = order.indexOf(a.key);
-        const ib = order.indexOf(b.key);
-        const sa = ia === -1 ? 999 : ia;
-        const sb = ib === -1 ? 999 : ib;
-        return sa - sb;
-      });
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[m]));
+  }
 
-      const max = Math.max(...entries.map(e => e.count), 1);
-
-      const cardDiv = document.createElement("div");
-      cardDiv.className = "stats-card chart-card";
-
-      const title = document.createElement("div");
-      title.className = "chart-title";
-      title.textContent = "CCF 等级分布（来自 n8n stats）";
-
-      const canvas = document.createElement("canvas");
-      canvas.width = 900; // 让线条更清晰（CSS 会缩放）
-      canvas.height = 320;
-
-      cardDiv.appendChild(title);
-      cardDiv.appendChild(canvas);
-      messagesContainer.appendChild(cardDiv);
-
-      const ctx = canvas.getContext("2d");
-
-      // 清空
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 画背景网格
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const padding = 60;
-      const chartW = canvas.width - padding * 2;
-      const chartH = canvas.height - padding * 2;
-
-      // 网格线（4 段）
-      ctx.strokeStyle = "#f0f0f2";
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const y = padding + chartH - (chartH * i / 4);
-        ctx.beginPath();
-        ctx.moveTo(padding, y);
-        ctx.lineTo(padding + chartW, y);
-        ctx.stroke();
-      }
-
-      // 坐标轴
-      ctx.strokeStyle = "#e5e5e7";
-      ctx.beginPath();
-      ctx.moveTo(padding, padding);
-      ctx.lineTo(padding, padding + chartH);
-      ctx.lineTo(padding + chartW, padding + chartH);
-      ctx.stroke();
-
-      // 柱子
-      const barGap = 18;
-      const barCount = entries.length;
-      const totalGap = barGap * (barCount - 1);
-      const barW = Math.max(20, (chartW - totalGap) / barCount);
-
-      entries.forEach((e, idx) => {
-        const x = padding + idx * (barW + barGap);
-        const h = (e.count / max) * (chartH);
-        const y = padding + (chartH - h);
-
-        // 配色
-        const color = pickColor(e.key);
-        ctx.fillStyle = color;
-
-        // 柱子主体
-        roundRect(ctx, x, y, barW, h, 10);
-        ctx.fill();
-
-        // 柱子数量
-        ctx.fillStyle = "#333";
-        ctx.font = "16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(String(e.count), x + barW / 2, y - 8);
-
-        // x 轴 label（A/B/C/NON）
-        ctx.fillStyle = "#666";
-        ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-        ctx.fillText(String(e.key), x + barW / 2, padding + chartH + 28);
-      });
-
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function pickColor(key) {
-      const k = String(key).toUpperCase();
-      if (k === "A") return "#111111";
-      if (k === "B") return "#3b82f6";
-      if (k === "C") return "#a855f7";
-      if (k === "NON" || k === "N0N" || k === "NONCCF" || k === "非") return "#f59e0b";
-      return "#6b7280";
-    }
-
-    function roundRect(ctx, x, y, w, h, r) {
-      const radius = Math.min(r, w / 2, h / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.arcTo(x + w, y, x + w, y + h, radius);
-      ctx.arcTo(x + w, y + h, x, y + h, radius);
-      ctx.arcTo(x, y + h, x, y, radius);
-      ctx.arcTo(x, y, x + w, y, radius);
-      ctx.closePath();
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, (m) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      }[m]));
-    }
-
-    // ================== 历史记录 ==================
-    function parseQueryForHistory(query) {
-      // 你的输入大概率是：作者 名字 大学缩写/名字
-      // 我们尽量取前两个 token 做“名字/学校”，学校允许包含多个词
-      const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
-      const name = parts[0] || query;
-      const university = parts.slice(1).join(" ") || "";
-      return { name, university };
-    }
-
-    function addToHistory(query) {
-      const { name, university } = parseQueryForHistory(query);
-      const item = {
-        name,
-        university,
-        query,
-        timestamp: new Date().toISOString()
-      };
-
-      searchHistory = searchHistory.filter(h => h.query !== query);
-      searchHistory.unshift(item);
-      searchHistory = searchHistory.slice(0, 10);
-
-      localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
-      renderHistory();
-    }
-
-    function renderHistory() {
-      historyList.innerHTML = searchHistory.map((item) => `
-        <div class="history-item" role="button" tabindex="0" onclick="selectFromHistory(${JSON.stringify(item.query)})" onkeydown="if(event.key==='Enter') selectFromHistory(${JSON.stringify(item.query)})">
-          <div class="history-item-name">${escapeHtml(item.name || "")}</div>
-          <div class="history-item-school">${escapeHtml(item.university || "")}</div>
-        </div>
-      `).join("");
-    }
-
-    function selectFromHistory(query) {
-      searchInput.value = query;
-      performSearch();
-    }
-
-    init();
-  </script>
+  init();
+</script>
 </body>
 </html>
