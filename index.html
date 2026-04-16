@@ -1,831 +1,795 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>科研人才 Mapping Agent</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: #ffffff;
-            color: #1d1d1f;
-            line-height: 1.6;
-        }
-
-        /* ============= 主容器 ============= */
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            position: relative;
-        }
-
-        /* ============= 顶部导航栏 ============= */
-        .header {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 40px;
-            border-bottom: 1px solid #f5f5f7;
-            background: #ffffff;
-            position: relative;
-            z-index: 10;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-        }
-
-        .logo-icon {
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, #000000 0%, #333333 100%);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            font-size: 13px;
-            color: #666666;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            background: #f5f5f7;
-            border-radius: 16px;
-            font-size: 12px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #34c759;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* ============= 主内容区 ============= */
-        .main {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* ============= 左侧面板 ============= */
-        .sidebar {
-            width: 380px;
-            border-right: 1px solid #f5f5f7;
-            display: flex;
-            flex-direction: column;
-            background: #fafafa;
-            overflow-y: auto;
-        }
-
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0;
-        }
-
-        /* ============= 搜索面板 ============= */
-        .search-panel {
-            padding: 32px 28px;
-            border-bottom: 1px solid #f5f5f7;
-        }
-
-        .search-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #999999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
-        }
-
-        .search-box {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .input-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #d2d2d7;
-            border-radius: 8px;
-            font-size: 15px;
-            background: white;
-            transition: all 0.2s ease;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-
-        input[type="text"]:placeholder {
-            color: #a1a1a6;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #000000;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="text"]:hover:not(:focus) {
-            border-color: #b0b0b5;
-        }
-
-        /* ============= 提示文字 ============= */
-        .input-hint {
-            font-size: 11px;
-            color: #a1a1a6;
-            margin-top: 4px;
-            font-weight: 400;
-        }
-
-        /* ============= 搜索按钮 ============= */
-        .search-button {
-            width: 100%;
-            padding: 12px 16px;
-            margin-top: 8px;
-            background: #000000;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.3px;
-        }
-
-        .search-button:hover {
-            background: #1d1d1f;
-        }
-
-        .search-button:active {
-            transform: scale(0.98);
-        }
-
-        .search-button.loading {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        /* ============= 历史记录 ============= */
-        .history-section {
-            padding: 28px 28px 0;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .history-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #999999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
-        }
-
-        .history-item {
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            background: white;
-            border: 1px solid #e5e5e7;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 13px;
-            color: #1d1d1f;
-        }
-
-        .history-item:hover {
-            background: #f5f5f7;
-            border-color: #d2d2d7;
-        }
-
-        .history-item-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .history-item-school {
-            font-size: 12px;
-            color: #a1a1a6;
-        }
-
-        /* ============= 右侧聊天区 ============= */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: white;
-        }
-
-        .chat-header {
-            padding: 24px 40px;
-            border-bottom: 1px solid #f5f5f7;
-            min-height: 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .chat-header-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 6px;
-        }
-
-        .chat-header-subtitle {
-            font-size: 13px;
-            color: #a1a1a6;
-        }
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 32px 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            background: white;
-        }
-
-        .message {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            align-items: flex-end;
-        }
-
-        .message.assistant {
-            align-items: flex-start;
-        }
-
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 15px;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
-
-        .message.user .message-bubble {
-            background: #000000;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message.assistant .message-bubble {
-            background: #f5f5f7;
-            color: #1d1d1f;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-time {
-            font-size: 12px;
-            color: #a1a1a6;
-        }
-
-        .loading-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .loading-dot {
-            width: 8px;
-            height: 8px;
-            background: #d2d2d7;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite;
-        }
-
-        .loading-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .loading-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% { opacity: 0.3; }
-            40% { opacity: 1; }
-        }
-
-        /* ============= 空状态 ============= */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            gap: 24px;
-            color: #a1a1a6;
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            opacity: 0.5;
-        }
-
-        .empty-text {
-            font-size: 15px;
-            text-align: center;
-            max-width: 300px;
-        }
-
-        /* ============= 响应式 ============= */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 320px;
-            }
-            
-            .search-panel {
-                padding: 24px 20px;
-            }
-
-            .chat-header {
-                padding: 20px 32px;
-            }
-
-            .messages-container {
-                padding: 24px 32px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                padding: 0 20px;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid #f5f5f7;
-                max-height: 200px;
-            }
-
-            .main {
-                flex-direction: column;
-            }
-
-            .chat-area {
-                flex: 1;
-            }
-
-            .message-bubble {
-                max-width: 90%;
-            }
-
-            .chat-header {
-                padding: 16px 20px;
-            }
-
-            .messages-container {
-                padding: 16px 20px;
-            }
-        }
-
-        /* ============= 滚动条样式 ============= */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #d2d2d7;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #999999;
-        }
-
-        /* ============= 统计卡片 ============= */
-        .stats-card {
-            background: white;
-            border: 1px solid #e5e5e7;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 12px;
-            font-size: 13px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f5f5f7;
-        }
-
-        .stat-row:last-child {
-            border-bottom: none;
-        }
-
-        .stat-label {
-            color: #a1a1a6;
-        }
-
-        .stat-value {
-            font-weight: 600;
-            color: #1d1d1f;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>科研人才 Mapping Agent</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: #ffffff;
+      color: #1d1d1f;
+      line-height: 1.6;
+    }
+
+    .container { display: flex; flex-direction: column; height: 100vh; position: relative; }
+
+    .header {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 1px solid #f5f5f7;
+      background: #ffffff;
+      position: relative;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #000000 0%, #333333 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 24px; font-size: 13px; color: #666666; }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: #f5f5f7;
+      border-radius: 16px;
+      font-size: 12px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; background: #34c759; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    .sidebar {
+      width: 380px;
+      border-right: 1px solid #f5f5f7;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+      overflow-y: auto;
+    }
+    .sidebar-content { flex: 1; overflow-y: auto; padding: 0; }
+
+    .search-panel { padding: 32px 28px; border-bottom: 1px solid #f5f5f7; }
+
+    .search-title {
+      font-size: 14px; font-weight: 500; color: #999999;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .search-box { display: flex; flex-direction: column; gap: 16px; }
+
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666666;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* 改一下：输入 + 按钮一体化布局 */
+    .search-actions { display: flex; gap: 12px; align-items: stretch; }
+    .input-wrapper { position: relative; display: flex; flex: 1; }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      font-size: 15px;
+      background: white;
+      transition: all 0.2s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    input[type="text"]::placeholder { color: #a1a1a6; }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #000000;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .input-hint { font-size: 11px; color: #a1a1a6; margin-top: 4px; font-weight: 400; }
+
+    .search-button {
+      width: 108px;
+      padding: 12px 0;
+      background: #000000;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+    .search-button:hover { background: #1d1d1f; }
+    .search-button:active { transform: scale(0.99); }
+    .search-button.loading { opacity: 0.65; cursor: not-allowed; }
+
+    .history-section { padding: 28px 28px 0; flex: 1; overflow-y: auto; }
+    .history-title {
+      font-size: 14px; font-weight: 500; color: #999999;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .history-item {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      background: white;
+      border: 1px solid #e5e5e7;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 13px;
+      color: #1d1d1f;
+    }
+    .history-item:hover { background: #f5f5f7; border-color: #d2d2d7; }
+    .history-item-name { font-weight: 500; margin-bottom: 4px; }
+    .history-item-school { font-size: 12px; color: #a1a1a6; }
+
+    .chat-area { flex: 1; display: flex; flex-direction: column; background: white; }
+
+    .chat-header {
+      padding: 24px 40px;
+      border-bottom: 1px solid #f5f5f7;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .chat-header-title { font-size: 24px; font-weight: 600; color: #1d1d1f; }
+    .chat-header-subtitle { font-size: 13px; color: #a1a1a6; }
+
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: white;
+    }
+
+    .message { display: flex; flex-direction: column; gap: 8px; animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+
+    .message.user { align-items: flex-end; }
+    .message.assistant { align-items: flex-start; }
+
+    .message-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .message.user .message-bubble {
+      background: #000000; color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .message.assistant .message-bubble {
+      background: #f5f5f7; color: #1d1d1f;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time { font-size: 12px; color: #a1a1a6; }
+
+    .loading-dots { display: flex; gap: 4px; }
+    .loading-dot { width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%; animation: bounce 1.4s infinite; }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; gap: 24px; color: #a1a1a6; text-align: center;
+    }
+    .empty-icon { font-size: 48px; opacity: 0.5; }
+    .empty-text { font-size: 15px; max-width: 360px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .stats-card {
+      background: white;
+      border: 1px solid #e5e5e7;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stat-row {
+      display: flex; justify-content: space-between; padding: 8px 0;
+      border-bottom: 1px solid #f5f5f7;
+      font-size: 13px;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: #a1a1a6; }
+    .stat-value { font-weight: 700; color: #1d1d1f; }
+
+    .chart-card { padding: 16px; }
+    .chart-title { font-size: 13px; color: #666; font-weight: 600; margin-bottom: 10px; }
+    canvas { width: 100%; height: 220px; display: block; background: #ffffff; border-radius: 10px; }
+
+    /* 响应式 */
+    @media (max-width: 1200px) {
+      .sidebar { width: 320px; }
+      .search-panel { padding: 24px 20px; }
+      .chat-header { padding: 20px 32px; }
+      .messages-container { padding: 24px 32px; }
+    }
+    @media (max-width: 768px) {
+      .header { padding: 0 20px; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #f5f5f7; max-height: 240px; }
+      .main { flex-direction: column; }
+      .chat-area { flex: 1; }
+      .message-bubble { max-width: 90%; }
+      .chat-header { padding: 16px 20px; }
+      .messages-container { padding: 16px 20px; }
+      .search-actions { gap: 10px; }
+      .search-button { width: 96px; }
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #999999; }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <!-- 顶部导航栏 -->
-        <div class="header">
-            <div class="logo">
-                <div class="logo-icon">◆</div>
-                <span>科研人才 Mapping Agent</span>
-            </div>
-            <div class="header-right">
-                <div class="status-badge">
-                    <div class="status-dot"></div>
-                    <span>连接中</span>
-                </div>
-            </div>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">◆</div>
+        <span>科研人才 Mapping Agent</span>
+      </div>
+      <div class="header-right">
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          <span>连接中</span>
         </div>
-
-        <!-- 主内容区 -->
-        <div class="main">
-            <!-- 左侧面板 -->
-            <div class="sidebar">
-                <div class="sidebar-content">
-                    <!-- 搜索面板 -->
-                    <div class="search-panel">
-                        <div class="search-title">搜索</div>
-                        <div class="search-box">
-                            <div class="input-group">
-                                <label class="input-label">研究者信息</label>
-                                <input 
-                                    type="text" 
-                                    id="searchInput"
-                                    placeholder="例如：zhihua zhou nju"
-                                    autocomplete="off"
-                                >
-                                <div class="input-hint">Enter the name and school</div>
-                            </div>
-                           <button id="searchBtn" type="button">搜索</button>
-                        </div>
-                    </div>
-
-                    <!-- 历史记录 -->
-                    <div class="history-section">
-                        <div class="history-title">最近搜索</div>
-                        <div id="historyList">
-                            <!-- 动态生成 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 右侧聊天区 -->
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div class="chat-header-title" id="chatTitle">欢迎使用</div>
-                    <div class="chat-header-subtitle" id="chatSubtitle">在左侧输入相关研究者信息开始评估</div>
-                </div>
-                <div class="messages-container" id="messagesContainer">
-                    <div class="empty-state">
-                        <div class="empty-icon">📊</div>
-                        <div class="empty-text">输入研究者姓名和所在学校，获取学术成就评估报告</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <script>
-        // ============= 配置 =============
-        const N8N_WEBHOOK_URL = 'https://weathered-lab-9d3f.8f3va2ehrl.workers.dev'; // 替换为你的 n8n Webhook URL
+    <div class="main">
+      <!-- 左侧面板 -->
+      <div class="sidebar">
+        <div class="sidebar-content">
+          <!-- 搜索面板 -->
+          <div class="search-panel">
+            <div class="search-title">搜索</div>
 
-        // ============= 状态管理 =============
-        let isLoading = false;
-        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-
-        // ============= DOM 元素 =============
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const chatTitle = document.getElementById('chatTitle');
-        const chatSubtitle = document.getElementById('chatSubtitle');
-        const historyList = document.getElementById('historyList');
-
-        // ============= 初始化 =============
-        function init() {
-            renderHistory();
-           document.addEventListener("DOMContentLoaded", () => {
-  setupEventListeners()
-})();
-        }
-
-        // ============= 事件监听 =============
-        function setupEventListeners() {
-            // Enter 键搜索
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !isLoading) {
-                    performSearch();
-                }
-            });
-
-            // 按钮点击
-            searchButton.addEventListener('click', performSearch);
-        }
-
-        // ============= 执行搜索 =============
-        async function performSearch() {
-            const query = searchInput.value.trim();
-            
-            if (!query) {
-                alert('请输入研究者信息');
-                return;
-            }
-
-            if (isLoading) return;
-
-            isLoading = true;
-            searchButton.classList.add('loading');
-            searchButton.textContent = '处理中...';
-
-            // 添加到历史记录
-            addToHistory(query);
-
-            // 清空消息容器
-            messagesContainer.innerHTML = '';
-
-            // 显示用户消息
-            addMessage(query, 'user');
-
-            // 显示加载动画
-            addLoadingMessage();
-
-            try {
-                // 调用 n8n Webhook
-                const response = await fetch("https://weathered-lab-9d3f.8f3va2ehrl.workers.dev", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chatMessage: query,
-                        sessionId: generateSessionId()
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // 移除加载消息
-                removeLoadingMessage();
-
-                // 显示响应
-                if (data.response || data.analysis) {
-                    const responseText = data.response || data.analysis;
-                    addMessage(responseText, 'assistant');
-
-                    // 更新标题
-                    const author = data.author || '评估结果';
-                    chatTitle.textContent = author;
-                    chatSubtitle.textContent = `${data.university || ''}的学术评估`;
-
-                    // 显示统计卡片
-                    if (data.statistics) {
-                        addStatsCard(data.statistics);
-                    }
-                } else {
-                    addMessage('未能获取评估结果，请重试', 'assistant');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                removeLoadingMessage();
-                addMessage(`出错: ${error.message}。请检查 n8n Webhook URL 是否正确配置。`, 'assistant');
-            } finally {
-                isLoading = false;
-                searchButton.classList.remove('loading');
-                searchButton.textContent = '开始评估';
-            }
-        }
-
-        // ============= 消息相关函数 =============
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = text;
-
-            const time = document.createElement('div');
-            time.className = 'message-time';
-            time.textContent = new Date().toLocaleTimeString('zh-CN', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-
-            messageDiv.appendChild(bubble);
-            messageDiv.appendChild(time);
-            messagesContainer.appendChild(messageDiv);
-
-            // 自动滚动到底部
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function addLoadingMessage() {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message assistant';
-            messageDiv.id = 'loadingMessage';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-
-            const dots = document.createElement('div');
-            dots.className = 'loading-dots';
-            dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
-
-            bubble.appendChild(dots);
-            messageDiv.appendChild(bubble);
-            messagesContainer.appendChild(messageDiv);
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function removeLoadingMessage() {
-            const loadingMsg = document.getElementById('loadingMessage');
-            if (loadingMsg) {
-                loadingMsg.remove();
-            }
-        }
-
-        function addStatsCard(stats) {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'stats-card';
-
-            const rows = [
-                { label: '总论文数', value: stats.total_papers || 0 },
-                { label: 'CCF-A 一作/共一', value: stats.ccf_a_first_author || 0 + ' 篇' },
-                { label: 'CCF-A 其他身份', value: stats.ccf_a_other_author || 0 + ' 篇' },
-                { label: '非 CCF-A', value: stats.non_ccf_a || 0 + ' 篇' }
-            ];
-
-            cardDiv.innerHTML = rows.map(row => `
-                <div class="stat-row">
-                    <span class="stat-label">${row.label}</span>
-                    <span class="stat-value">${row.value}</span>
+            <div class="search-box">
+              <div class="input-group">
+                <label class="input-label">研究者信息</label>
+                <div class="search-actions">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      id="searchInput"
+                      placeholder="例如：guozhen zhang nju"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <button id="searchBtn" class="search-button" type="button">搜索</button>
                 </div>
-            `).join('');
+                <div class="input-hint">Enter the name and school</div>
+              </div>
+            </div>
+          </div>
 
-            messagesContainer.appendChild(cardDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+          <!-- 历史记录 -->
+          <div class="history-section">
+            <div class="history-title">最近搜索</div>
+            <div id="historyList"></div>
+          </div>
+        </div>
+      </div>
 
-        // ============= 历史记录相关 =============
-        function addToHistory(query) {
-            // 从查询中提取名字和学校
-            const parts = query.split(/[\s，,]+/);
-            if (parts.length >= 2) {
-                const item = {
-                    name: parts[0],
-                    university: parts[1],
-                    query: query,
-                    timestamp: new Date().toISOString()
-                };
+      <!-- 右侧聊天区 -->
+      <div class="chat-area">
+        <div class="chat-header">
+          <div class="chat-header-title" id="chatTitle">欢迎使用</div>
+          <div class="chat-header-subtitle" id="chatSubtitle">在左侧输入相关研究者信息开始评估</div>
+        </div>
 
-                // 避免重复
-                searchHistory = searchHistory.filter(h => h.query !== query);
-                searchHistory.unshift(item);
+        <div class="messages-container" id="messagesContainer">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <div class="empty-text">输入研究者姓名和所在学校，获取学术成就评估报告</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                // 只保留最近 10 条
-                searchHistory = searchHistory.slice(0, 10);
+  <script>
+    // ================== 配置：这里填你的 worker 域名 ==================
+    const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
 
-                localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-                renderHistory();
+    // ================== 状态管理 ==================
+    let isLoading = false;
+    let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
+
+    // ================== DOM ==================
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const messagesContainer = document.getElementById("messagesContainer");
+    const chatTitle = document.getElementById("chatTitle");
+    const chatSubtitle = document.getElementById("chatSubtitle");
+    const historyList = document.getElementById("historyList");
+
+    function init() {
+      renderHistory();
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !isLoading) performSearch();
+      });
+      searchBtn.addEventListener("click", performSearch);
+    }
+
+    async function performSearch() {
+      const text = (searchInput.value || "").trim();
+      if (!text) {
+        alert("请输入研究者信息");
+        return;
+      }
+      if (isLoading) return;
+
+      isLoading = true;
+      setLoading(true);
+
+      // 写入历史
+      addToHistory(text);
+
+      // 清空右侧
+      messagesContainer.innerHTML = "";
+
+      // 用户消息
+      addMessage(text, "user");
+      addLoadingMessage();
+
+      try {
+        // 关键：n8n 侧接收的是 body.message（你前面就是这个结构）
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        const raw = await res.text();
+
+        // 尝试解析 JSON（worker/n8n 都可能返回 JSON 或纯文本）
+        let data = null;
+        try { data = JSON.parse(raw); } catch { data = null; }
+
+        // 移除加载动画
+        removeLoadingMessage();
+
+        // 展示结果
+        if (res.ok) {
+          if (data && (data.error || data.message)) {
+            // 统一错误展示
+            const errMsg = data.message ? data.message : "请求失败";
+            addMessage(errMsg, "assistant");
+            chatTitle.textContent = "评估失败";
+            chatSubtitle.textContent = "请检查输入格式或稍后重试";
+            if (data.detail) {
+              addSmallBlock("错误详情：" + String(data.detail), false);
             }
+            return;
+          }
+
+          // 成功：更新标题
+          const titleInfo = pickTitleInfo(data);
+          chatTitle.textContent = titleInfo.title;
+          chatSubtitle.textContent = titleInfo.subtitle;
+
+          // 右侧：展示 n8n 返回的主要字段 + 图表
+          renderN8nResult(data);
+        } else {
+          addMessage("请求失败：HTTP " + res.status, "assistant");
+          if (raw) addSmallBlock("返回内容：" + raw, true);
+          chatTitle.textContent = "请求失败";
+          chatSubtitle.textContent = "HTTP " + res.status;
         }
+      } catch (e) {
+        console.error(e);
+        removeLoadingMessage();
+        addMessage("出错：" + e.message, "assistant");
+        chatTitle.textContent = "网络错误";
+        chatSubtitle.textContent = "请稍后重试";
+      } finally {
+        isLoading = false;
+        setLoading(false);
+      }
+    }
 
-        function renderHistory() {
-            historyList.innerHTML = searchHistory.map((item, index) => `
-                <div class="history-item" onclick="selectFromHistory('${item.query}')">
-                    <div class="history-item-name">${item.name}</div>
-                    <div class="history-item-school">${item.university}</div>
-                </div>
-            `).join('');
-        }
+    function setLoading(loading) {
+      if (loading) {
+        searchBtn.classList.add("loading");
+        searchBtn.textContent = "处理中...";
+      } else {
+        searchBtn.classList.remove("loading");
+        searchBtn.textContent = "搜索";
+      }
+    }
 
-        function selectFromHistory(query) {
-            searchInput.value = query;
-            performSearch();
-        }
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${sender}`;
 
-        // ============= 工具函数 =============
-        function generateSessionId() {
-            return 'session_' + Math.random().toString(36).substr(2, 9);
-        }
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+      bubble.textContent = String(text);
 
-        // ============= 启动应用 =============
-        init();
-    </script>
-    <script>
-document.getElementById("searchBtn").onclick = async function () {
-  const text = (document.getElementById("searchInput")?.value || "").trim();
-  if (!text) {
-    alert("请先输入内容");
-    return;
-  }
+      const time = document.createElement("div");
+      time.className = "message-time";
+      time.textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 
-  try {
-    const res = await fetch("https://weathered-lab-9d3f.8f3va2ehrl.workers.dev", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
+      messageDiv.appendChild(bubble);
+      messageDiv.appendChild(time);
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 
-    const result = await res.text();
-    alert("返回结果：" + result);
-  } catch (e) {
-    alert("请求失败：" + e.message);
-  }
-};
-</script>
+    function addSmallBlock(text, isCode) {
+      const div = document.createElement("div");
+      div.className = "stats-card";
+      div.style.marginTop = "2px";
+      div.style.fontSize = "13px";
+      div.style.color = "#1d1d1f";
+      div.textContent = String(text);
+      if (isCode) div.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addLoadingMessage() {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "message assistant";
+      messageDiv.id = "loadingMessage";
+
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+
+      const dots = document.createElement("div");
+      dots.className = "loading-dots";
+      dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+
+      bubble.appendChild(dots);
+      messageDiv.appendChild(bubble);
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeLoadingMessage() {
+      const loadingMsg = document.getElementById("loadingMessage");
+      if (loadingMsg) loadingMsg.remove();
+    }
+
+    function renderN8nResult(data) {
+      if (!data || typeof data !== "object") {
+        addMessage("返回结果不是有效 JSON。", "assistant");
+        return;
+      }
+
+      // 1) 顶部简单摘要（如果 n8n 给了你截图里的字段）
+      const summary = [];
+      if (data.target_scholar) summary.push("学者：" + data.target_scholar);
+      if (data.total_papers != null) summary.push("总论文数：" + data.total_papers);
+      if (data.identified_count != null) summary.push("已识别数量：" + data.identified_count);
+      if (summary.length) {
+        addMessage(summary.join("，"), "assistant");
+      } else {
+        // 兜底：把整个 JSON 简短展示
+        addMessage("已获取评估结果（见下方统计）。", "assistant");
+      }
+
+      // 2) 统计卡片（尽量兼容你可能的字段命名）
+      const statsCard = buildStatsCardData(data);
+      if (statsCard) renderStatsCard(statsCard);
+
+      // 3) 绘图：如果 n8n 返回 stats 对象（例如 A/B/C/NON -> count/type/level）
+      if (data.stats && typeof data.stats === "object") {
+        renderStatsChart(data.stats);
+      }
+
+      // 4) 如果你还需要把 n8n 的原始输出展示出来（调试用）
+      // 你也可以注释掉这一段
+      if (data.need_ai_stats != null || data.stats) {
+        const debug = {
+          // 只取你可能关心的字段，避免输出太长
+          target_scholar: data.target_scholar,
+          total_papers: data.total_papers,
+          identified_count: data.identified_count,
+          need_ai_stats: data.need_ai_stats,
+          stats: data.stats
+        };
+        addSmallBlock("结果原始数据（部分）：\n" + JSON.stringify(debug, null, 2), true);
+      }
+    }
+
+    function pickTitleInfo(data) {
+      // 优先你截图里的 target_scholar
+      if (data.target_scholar) {
+        return {
+          title: "评估结果：" + data.target_scholar,
+          subtitle: (data.university ? data.university : "科研人才 mapping 统计")
+        };
+      }
+
+      // 否则使用 author_name/university（你 n8n code 节点可能返回）
+      if (data.author_name || data.university) {
+        return {
+          title: "评估结果：" + (data.author_name || "研究者"),
+          subtitle: (data.university ? data.university : "科研人才 mapping 统计")
+        };
+      }
+
+      return { title: "评估结果", subtitle: "已完成统计" };
+    }
+
+    function buildStatsCardData(data) {
+      // 支持你截图里的字段优先
+      if (data.total_papers != null || data.identified_count != null) {
+        return {
+          rows: [
+            { label: "总论文数", value: data.total_papers ?? 0 },
+            { label: "已识别数量", value: data.identified_count ?? 0 },
+            { label: "需要 AI 统计", value: data.need_ai_stats === undefined ? "-" : String(data.need_ai_stats) }
+          ]
+        };
+      }
+
+      // 如果有下面这种统计字段，也兼容一下（可选）
+      if (data.total_papers != null || data.non_ccf_a != null) {
+        return {
+          rows: [
+            { label: "总论文数", value: data.total_papers ?? 0 },
+            { label: "非 CCF-A", value: data.non_ccf_a ?? 0 },
+          ]
+        };
+      }
+
+      return null;
+    }
+
+    function renderStatsCard(card) {
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "stats-card";
+
+      cardDiv.innerHTML = card.rows.map(r => `
+        <div class="stat-row">
+          <span class="stat-label">${escapeHtml(r.label)}</span>
+          <span class="stat-value">${escapeHtml(String(r.value))}</span>
+        </div>
+      `).join("");
+
+      messagesContainer.appendChild(cardDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function renderStatsChart(statsObj) {
+      const order = ["A", "B", "C", "NON", "Non", "non", ""];
+
+      const entries = Object.keys(statsObj).map((k) => {
+        const v = statsObj[k] || {};
+        const countRaw = v.count ?? v.num ?? v.value ?? 0;
+        const count = Number(countRaw) || 0;
+        return { key: k, count, v };
+      });
+
+      // 按你常见顺序排序；未知 key 放后面
+      entries.sort((a, b) => {
+        const ia = order.indexOf(a.key);
+        const ib = order.indexOf(b.key);
+        const sa = ia === -1 ? 999 : ia;
+        const sb = ib === -1 ? 999 : ib;
+        return sa - sb;
+      });
+
+      const max = Math.max(...entries.map(e => e.count), 1);
+
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "stats-card chart-card";
+
+      const title = document.createElement("div");
+      title.className = "chart-title";
+      title.textContent = "CCF 等级分布（来自 n8n stats）";
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 900; // 让线条更清晰（CSS 会缩放）
+      canvas.height = 320;
+
+      cardDiv.appendChild(title);
+      cardDiv.appendChild(canvas);
+      messagesContainer.appendChild(cardDiv);
+
+      const ctx = canvas.getContext("2d");
+
+      // 清空
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 画背景网格
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const padding = 60;
+      const chartW = canvas.width - padding * 2;
+      const chartH = canvas.height - padding * 2;
+
+      // 网格线（4 段）
+      ctx.strokeStyle = "#f0f0f2";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + chartH - (chartH * i / 4);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(padding + chartW, y);
+        ctx.stroke();
+      }
+
+      // 坐标轴
+      ctx.strokeStyle = "#e5e5e7";
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, padding + chartH);
+      ctx.lineTo(padding + chartW, padding + chartH);
+      ctx.stroke();
+
+      // 柱子
+      const barGap = 18;
+      const barCount = entries.length;
+      const totalGap = barGap * (barCount - 1);
+      const barW = Math.max(20, (chartW - totalGap) / barCount);
+
+      entries.forEach((e, idx) => {
+        const x = padding + idx * (barW + barGap);
+        const h = (e.count / max) * (chartH);
+        const y = padding + (chartH - h);
+
+        // 配色
+        const color = pickColor(e.key);
+        ctx.fillStyle = color;
+
+        // 柱子主体
+        roundRect(ctx, x, y, barW, h, 10);
+        ctx.fill();
+
+        // 柱子数量
+        ctx.fillStyle = "#333";
+        ctx.font = "16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(String(e.count), x + barW / 2, y - 8);
+
+        // x 轴 label（A/B/C/NON）
+        ctx.fillStyle = "#666";
+        ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.fillText(String(e.key), x + barW / 2, padding + chartH + 28);
+      });
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function pickColor(key) {
+      const k = String(key).toUpperCase();
+      if (k === "A") return "#111111";
+      if (k === "B") return "#3b82f6";
+      if (k === "C") return "#a855f7";
+      if (k === "NON" || k === "N0N" || k === "NONCCF" || k === "非") return "#f59e0b";
+      return "#6b7280";
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[m]));
+    }
+
+    // ================== 历史记录 ==================
+    function parseQueryForHistory(query) {
+      // 你的输入大概率是：作者 名字 大学缩写/名字
+      // 我们尽量取前两个 token 做“名字/学校”，学校允许包含多个词
+      const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
+      const name = parts[0] || query;
+      const university = parts.slice(1).join(" ") || "";
+      return { name, university };
+    }
+
+    function addToHistory(query) {
+      const { name, university } = parseQueryForHistory(query);
+      const item = {
+        name,
+        university,
+        query,
+        timestamp: new Date().toISOString()
+      };
+
+      searchHistory = searchHistory.filter(h => h.query !== query);
+      searchHistory.unshift(item);
+      searchHistory = searchHistory.slice(0, 10);
+
+      localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = searchHistory.map((item) => `
+        <div class="history-item" role="button" tabindex="0" onclick="selectFromHistory(${JSON.stringify(item.query)})" onkeydown="if(event.key==='Enter') selectFromHistory(${JSON.stringify(item.query)})">
+          <div class="history-item-name">${escapeHtml(item.name || "")}</div>
+          <div class="history-item-school">${escapeHtml(item.university || "")}</div>
+        </div>
+      `).join("");
+    }
+
+    function selectFromHistory(query) {
+      searchInput.value = query;
+      performSearch();
+    }
+
+    init();
+  </script>
 </body>
 </html>
