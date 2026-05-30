@@ -146,28 +146,102 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg-main);
 .chat-container::-webkit-scrollbar { width: 5px; }
 .chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-/* 欢迎页 */
-.welcome {
-  flex: 1; display: flex;
-  align-items: center; justify-content: center;
-  flex-direction: column; gap: 16px;
+/* 开屏 / 欢迎页 */
+.welcome.splash {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
   padding: 40px 20px;
+  min-height: min(70vh, 520px);
+  background: var(--bg-main);
+  animation: splash-in 0.5s ease;
 }
 
-.sheep-wrap { display: flex; align-items: center; justify-content: center; }
+.welcome.splash-hide {
+  display: none !important;
+}
 
-/* 关键：mix-blend-mode 让白底融入米色背景 */
+@keyframes splash-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sheep-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.sheep-start:hover { transform: scale(1.04); }
+.sheep-start:active { transform: scale(0.97); }
+
+/* 与页面同色底 + multiply，白底羊图融入米色背景 */
+.sheep-blend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  background: var(--bg-main);
+  border-radius: 50%;
+  isolation: isolate;
+}
+
 .sheep-img {
-  width: 180px; height: 180px;
+  width: 200px;
+  height: 200px;
   object-fit: contain;
   mix-blend-mode: multiply;
   animation: float 3.5s ease-in-out infinite;
+  display: block;
 }
 
 .sheep-svg {
-  width: 180px; height: 180px;
+  width: 200px;
+  height: 200px;
+  display: none;
+  mix-blend-mode: multiply;
   animation: float 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 8px 24px rgba(200,149,106,.2));
+  opacity: 0.92;
+}
+
+.splash-hint {
+  font-size: 16px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-align: center;
+  opacity: 0;
+  animation: hint-fade 0.8s ease 0.6s forwards;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes hint-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 开屏时隐藏输入框，点击羊羊后再出现 */
+.main.awaiting-start .input-area {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.main:not(.awaiting-start) .input-area {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 @keyframes float {

@@ -35,7 +35,7 @@
       </div>
     </aside>
 
-    <main class="main" id="main">
+    <main class="main awaiting-start" id="main">
       <header class="topbar">
         <button class="icon-btn" id="open-sidebar" title="展开侧栏" style="display:none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -54,10 +54,11 @@
       </header>
 
       <div class="chat-container" id="chat-container">
-        <div class="welcome" id="welcome">
-          <div class="sheep-wrap">
-            <img src="sheep.png" alt="Sourcing Agent" class="sheep-img" id="sheep-img" />
-            <svg class="sheep-svg" id="sheep-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+        <div class="welcome splash" id="welcome">
+          <button type="button" class="sheep-start" id="sheep-start" aria-label="戳戳咩咩开始对话">
+            <div class="sheep-blend">
+              <img src="sheep.png" alt="" class="sheep-img" id="sheep-img" />
+              <svg class="sheep-svg" id="sheep-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <ellipse cx="100" cy="140" rx="55" ry="40" fill="white" stroke="#ccc" stroke-width="2"/>
               <circle cx="100" cy="95" r="42" fill="white" stroke="#ccc" stroke-width="2"/>
               <circle cx="72" cy="85" r="28" fill="white" stroke="#ccc" stroke-width="2"/>
@@ -79,8 +80,10 @@
               <rect x="100" y="172" width="12" height="18" rx="6" fill="white" stroke="#ccc" stroke-width="1.5"/>
               <path d="M68 58 C68 54 62 50 58 54 C54 58 58 64 68 70 C78 64 82 58 78 54 C74 50 68 54 68 58Z" fill="#ff6b8a" opacity="0.85"/>
               <path d="M82 48 C82 45 77 42 74 45 C71 48 74 53 82 58 C90 53 93 48 90 45 C87 42 82 45 82 48Z" fill="#ff6b8a" opacity="0.85"/>
-            </svg>
-          </div>
+              </svg>
+            </div>
+          </button>
+          <p class="splash-hint" id="splash-hint">戳戳咩咩开始对话～</p>
         </div>
         <div class="messages" id="messages"></div>
       </div>

@@ -7,7 +7,7 @@ const CONFIG = {
   apiBase:  'https://api.coze.cn',
 };
 
-const PROLOGUE = `hi~我是你的AI人才sourcing助手✧｡٩(ˊᗜˋ)و✧*｡
+const PROLOGUE = `hi！✧｡٩(ˊᗜˋ)و✧*｡我是你的AI人才sourcing助手咩咩 Ꮚ･ꈊ･Ꮚ
 最近关注哪所高校，或者哪个实验室？让我来为你绘制专属人才地图！找到科研大佬，并帮你与他们建立联系和初步沟通！₍₍ ᕕ(´ ω\` )ᕗ⁾⁾`;
 
 /* ============================================================
@@ -63,27 +63,47 @@ function renderHistory() {
 /* ============================================================
    渲染消息（含开场白）
    ============================================================ */
+function showSplash() {
+  const welcome = document.getElementById('welcome');
+  const container = document.getElementById('messages');
+  const main = document.getElementById('main');
+  welcome.style.display = 'flex';
+  welcome.classList.remove('splash-hide');
+  container.style.display = 'none';
+  container.innerHTML = '';
+  main.classList.add('awaiting-start');
+}
+
+function hideSplash() {
+  const welcome = document.getElementById('welcome');
+  const main = document.getElementById('main');
+  welcome.classList.add('splash-hide');
+  welcome.style.display = 'none';
+  main.classList.remove('awaiting-start');
+}
+
+function isAwaitingStart() {
+  return document.getElementById('main').classList.contains('awaiting-start');
+}
+
 function renderMessages(messages) {
   const container = document.getElementById('messages');
-  const welcome   = document.getElementById('welcome');
   container.innerHTML = '';
 
   if (!messages || messages.length === 0) {
-    welcome.style.display = 'flex';
-    container.style.display = 'none';
+    showSplash();
     return;
   }
 
-  welcome.style.display = 'none';
+  hideSplash();
   container.style.display = 'flex';
   messages.forEach(msg => appendMessageDOM(msg.role, msg.content, false));
   scrollToBottom();
 }
 
 function appendMessageDOM(role, content, animate = true) {
-  const welcome   = document.getElementById('welcome');
   const container = document.getElementById('messages');
-  welcome.style.display = 'none';
+  hideSplash();
   container.style.display = 'flex';
 
   const div = document.createElement('div');
@@ -99,9 +119,8 @@ function appendMessageDOM(role, content, animate = true) {
 }
 
 function appendTypingIndicator() {
-  const welcome   = document.getElementById('welcome');
   const container = document.getElementById('messages');
-  welcome.style.display = 'none';
+  hideSplash();
   container.style.display = 'flex';
 
   const div = document.createElement('div');
@@ -128,24 +147,45 @@ function scrollToBottom() {
 function switchChat(id) {
   currentChatId = id;
   const chat = getChat(id);
-  renderMessages(chat ? chat.messages : []);
+  if (chat && chat.messages.length > 0) {
+    renderMessages(chat.messages);
+  } else {
+    showSplash();
+  }
   renderHistory();
 }
 
 /* ============================================================
-   新建对话（显示开场白）
+   开屏：点击羊羊 → 发送开场白
+   ============================================================ */
+function beginConversation() {
+  if (!currentChatId) {
+    const chat = createChat();
+    currentChatId = chat.id;
+    renderHistory();
+  }
+
+  const chat = getChat(currentChatId);
+  if (!chat) return;
+
+  const hasPrologue = chat.messages.some(m => m.role === 'ai' && m.content === PROLOGUE);
+  if (!hasPrologue) {
+    chat.messages.push({ role: 'ai', content: PROLOGUE });
+    saveChats();
+  }
+
+  renderMessages(chat.messages);
+  document.getElementById('user-input').focus();
+}
+
+/* ============================================================
+   新建对话（回到开屏，待点击羊羊）
    ============================================================ */
 function startNewChat() {
   const chat = createChat();
   currentChatId = chat.id;
-
-  // 把开场白作为 ai 消息存入，这样切换回来也能看到
-  chat.messages.push({ role: 'ai', content: PROLOGUE });
-  saveChats();
-
-  renderMessages(chat.messages);
+  showSplash();
   renderHistory();
-  document.getElementById('user-input').focus();
 }
 
 /* ============================================================
@@ -153,9 +193,10 @@ function startNewChat() {
    ============================================================ */
 async function sendMessage(text) {
   if (!text.trim()) return;
+  if (isAwaitingStart()) return;
 
   if (!currentChatId) {
-    startNewChat();
+    beginConversation();
   }
 
   const chat = getChat(currentChatId);
@@ -329,10 +370,19 @@ function toggleSidebar() {
 function initSheepImage() {
   const img = document.getElementById('sheep-img');
   const svg = document.getElementById('sheep-svg');
-  img.addEventListener('error', () => {
+  const useSvg = () => {
     img.style.display = 'none';
     svg.style.display = 'block';
-  });
+  };
+  const useImg = () => {
+    img.style.display = 'block';
+    svg.style.display = 'none';
+  };
+  img.addEventListener('error', useSvg);
+  img.addEventListener('load', useImg);
+  if (img.complete) {
+    img.naturalWidth > 0 ? useImg() : useSvg();
+  }
 }
 
 /* ============================================================
@@ -341,11 +391,9 @@ function initSheepImage() {
 function init() {
   initSheepImage();
   renderHistory();
+  showSplash();
 
-  // 有历史则打开最近一条（含完整消息）
-  if (chats.length > 0) {
-    switchChat(chats[0].id);
-  }
+  document.getElementById('sheep-start').addEventListener('click', beginConversation);
 
   const input   = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
