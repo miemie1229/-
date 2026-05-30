@@ -30,6 +30,7 @@ function createChat() {
     id,
     title: '新对话',
     messages: [], // { role: 'user'|'ai', content: string }
+    conversationId: null, // 扣子会话 ID，用于多轮上下文
     createdAt: id,
   };
   chats.unshift(chat);
@@ -178,7 +179,7 @@ async function sendMessage(text) {
   appendTypingIndicator();
 
   try {
-    const reply = await callCozeAPI(chat.messages);
+    const reply = await callCozeAPI(chat.messages, chat);
     removeTypingIndicator();
     chat.messages.push({ role: 'ai', content: reply });
     saveChats();
@@ -199,24 +200,24 @@ async function sendMessage(text) {
 /* ============================================================
    扣子 API 调用
    ============================================================ */
-async function callCozeAPI(messages) {
+async function callCozeAPI(messages, chat) {
   const userId = localStorage.getItem('sourcing_user_id') || (() => {
     const id = 'user_' + Math.random().toString(36).slice(2, 10);
     localStorage.setItem('sourcing_user_id', id);
     return id;
   })();
 
-  // 过滤掉开场白，只传真实对话（user/ai 交替）
   const realMessages = messages.filter(m => m.content !== PROLOGUE);
-  const additional_messages = realMessages.slice(-20).map(m => ({
-    role: m.role === 'user' ? 'user' : 'assistant',
-    content: m.content,
-    content_type: 'text',
-  }));
+  const lastUser = [...realMessages].reverse().find(m => m.role === 'user');
+  if (!lastUser) throw new Error('没有可发送的用户消息');
 
-  // 扣子 v3 要求 stream 与 auto_save_history 成对出现且互斥：
-  // stream=false → auto_save_history=true（非流式 + 轮询）
-  // stream=true  → auto_save_history=false（SSE 流式）
+  // 官方要求 additional_messages 仅传 role=user；上下文由 conversation_id + auto_save_history 维护
+  const additional_messages = [{
+    role: 'user',
+    content: lastUser.content,
+    content_type: 'text',
+  }];
+
   const body = {
     bot_id: CONFIG.botId,
     user_id: userId,
@@ -225,7 +226,12 @@ async function callCozeAPI(messages) {
     additional_messages,
   };
 
-  const res = await fetch(`${CONFIG.apiBase}/v3/chat`, {
+  let url = `${CONFIG.apiBase}/v3/chat`;
+  if (chat.conversationId) {
+    url += `?conversation_id=${encodeURIComponent(chat.conversationId)}`;
+  }
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
@@ -246,6 +252,8 @@ async function callCozeAPI(messages) {
 
   const chatId         = data.data.id;
   const conversationId = data.data.conversation_id;
+  if (conversationId) chat.conversationId = conversationId;
+
   return await pollChatResult(chatId, conversationId);
 }
 
@@ -259,7 +267,12 @@ async function pollChatResult(chatId, conversationId, maxWait = 60000) {
       { headers: { 'Authorization': `Bearer ${CONFIG.apiToken}` } }
     );
     const data = await res.json();
-    const status = data.data && data.data.status;
+    if (data.code && data.code !== 0) {
+      throw new Error(`轮询错误 ${data.code}: ${data.msg || ''}`);
+    }
+
+    const chatData = data.data || {};
+    const status = chatData.status;
 
     if (status === 'completed') {
       const msgRes = await fetch(
@@ -267,14 +280,19 @@ async function pollChatResult(chatId, conversationId, maxWait = 60000) {
         { headers: { 'Authorization': `Bearer ${CONFIG.apiToken}` } }
       );
       const msgData = await msgRes.json();
-      const answer = (msgData.data || []).find(
+      const answers = (msgData.data || []).filter(
         m => m.role === 'assistant' && m.type === 'answer'
       );
-      return answer ? answer.content : '（无回复）';
+      if (answers.length === 0) return '（无回复）';
+      return answers.map(m => m.content).join('\n');
     }
 
     if (status === 'failed' || status === 'canceled' || status === 'requires_action') {
-      throw new Error('对话异常，状态：' + status);
+      const lastError = chatData.last_error;
+      const detail = lastError && lastError.msg
+        ? `${lastError.msg} (code ${lastError.code})`
+        : status;
+      throw new Error(`对话异常：${detail}`);
     }
   }
   throw new Error('等待回复超时，请重试');
