@@ -1,850 +1,134 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>科研人才 Mapping Agent</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-      background: #ffffff;
-      color: #1d1d1f;
-      line-height: 1.6;
-    }
-
-    /* ============= 主容器 ============= */
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      position: relative;
-    }
-
-    /* ============= 顶部导航栏 ============= */
-    .header {
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 40px;
-      border-bottom: 1px solid #f5f5f7;
-      background: #ffffff;
-      position: relative;
-      z-index: 10;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: -0.5px;
-    }
-
-    .logo-icon {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, #000000 0%, #333333 100%);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      font-size: 13px;
-      color: #666666;
-    }
-
-    .status-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      background: #f5f5f7;
-      border-radius: 16px;
-      font-size: 12px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background: #34c759;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    /* ============= 主内容区 ============= */
-    .main {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-
-    /* ============= 左侧面板 ============= */
-    .sidebar {
-      width: 380px;
-      border-right: 1px solid #f5f5f7;
-      display: flex;
-      flex-direction: column;
-      background: #fafafa;
-      overflow-y: auto;
-    }
-
-    .sidebar-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0;
-    }
-
-    /* ============= 搜索面板 ============= */
-    .search-panel {
-      padding: 32px 28px;
-      border-bottom: 1px solid #f5f5f7;
-    }
-
-    .search-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: #999999;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-    }
-
-    .search-box { display: flex; flex-direction: column; gap: 16px; }
-    .input-group { display: flex; flex-direction: column; gap: 8px; }
-    .input-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #666666;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    /* 输入 + 按钮一体化（你说的搜索框不好看，这里做了同风格改进） */
-    .search-actions {
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-    }
-
-    .input-wrapper { position: relative; display: flex; align-items: center; flex: 1; }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #d2d2d7;
-      border-radius: 10px;
-      font-size: 15px;
-      background: white;
-      transition: all 0.2s ease;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    input[type="text"]::placeholder { color: #a1a1a6; }
-
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #000000;
-      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
-    }
-
-    input[type="text"]:hover:not(:focus) { border-color: #b0b0b5; }
-
-    .input-hint {
-      font-size: 11px;
-      color: #a1a1a6;
-      margin-top: 4px;
-      font-weight: 400;
-    }
-
-    .search-button {
-      width: 108px;
-      padding: 12px 0;
-      background: #000000;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      letter-spacing: 0.3px;
-      flex-shrink: 0;
-    }
-
-    .search-button:hover { background: #1d1d1f; }
-    .search-button:active { transform: scale(0.99); }
-
-    .search-button.loading {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
-    /* ============= 历史记录 ============= */
-    .history-section {
-      padding: 28px 28px 0;
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .history-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: #999999;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-    }
-
-    .history-item {
-      padding: 12px 16px;
-      margin-bottom: 8px;
-      background: white;
-      border: 1px solid #e5e5e7;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 13px;
-      color: #1d1d1f;
-    }
-
-    .history-item:hover {
-      background: #f5f5f7;
-      border-color: #d2d2d7;
-    }
-
-    .history-item-name {
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .history-item-school {
-      font-size: 12px;
-      color: #a1a1a6;
-    }
-
-    /* ============= 右侧聊天区 ============= */
-    .chat-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: white;
-    }
-
-    .chat-header {
-      padding: 24px 40px;
-      border-bottom: 1px solid #f5f5f7;
-      min-height: 80px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .chat-header-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #1d1d1f;
-      margin-bottom: 6px;
-    }
-
-    .chat-header-subtitle {
-      font-size: 13px;
-      color: #a1a1a6;
-    }
-
-    .messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      background: white;
-    }
-
-    .message {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .message.user { align-items: flex-end; }
-    .message.assistant { align-items: flex-start; }
-
-    .message-bubble {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 15px;
-      line-height: 1.5;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .message.user .message-bubble {
-      background: #000000;
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message.assistant .message-bubble {
-      background: #f5f5f7;
-      color: #1d1d1f;
-      border-bottom-left-radius: 4px;
-    }
-
-    .message-time {
-      font-size: 12px;
-      color: #a1a1a6;
-    }
-
-    .loading-dots { display: flex; gap: 4px; }
-    .loading-dot {
-      width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%;
-      animation: bounce 1.4s infinite;
-    }
-    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { opacity: 0.3; }
-      40% { opacity: 1; }
-    }
-
-    /* ============= 空状态 ============= */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 24px;
-      color: #a1a1a6;
-      text-align: center;
-    }
-
-    .empty-icon { font-size: 48px; opacity: 0.5; }
-    .empty-text { font-size: 15px; max-width: 420px; }
-
-    /* ============= 统计卡片 ============= */
-    .stats-card {
-      background: white;
-      border: 1px solid #e5e5e7;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #f5f5f7;
-      font-size: 13px;
-    }
-
-    .stat-row:last-child { border-bottom: none; }
-    .stat-label { color: #a1a1a6; }
-    .stat-value { font-weight: 700; color: #1d1d1f; }
-
-    .chart-title {
-      font-size: 13px;
-      color: #666666;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    /* report_table */
-    
-
-    /* ============= Table (stats) ============= */
-    .stats-detail-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    .stats-mini-table {
-      display: grid;
-      grid-template-columns: 80px 1fr 1fr 80px;
-      gap: 8px;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    .cell {
-      font-size: 13px;
-      padding: 6px 0;
-    }
-
-    .cell.h {
-      color: #a1a1a6;
-      font-weight: 700;
-      font-size: 12px;
-      border-bottom: 1px solid #f5f5f7;
-      padding-bottom: 8px;
-    }
-
-    .cell.v {
-      color: #1d1d1f;
-      font-weight: 600;
-    }
-
-    .cell.v2 {
-      color: #666666;
-      font-weight: 500;
-    }
-
-    /* ============= 响应式 ============= */
-    @media (max-width: 1200px) {
-      .sidebar { width: 320px; }
-      .search-panel { padding: 24px 20px; }
-      .chat-header { padding: 20px 32px; }
-      .messages-container { padding: 24px 32px; }
-    }
-
-    @media (max-width: 768px) {
-      .header { padding: 0 20px; }
-      .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #f5f5f7;
-        max-height: 240px;
-      }
-      .main { flex-direction: column; }
-      .message-bubble { max-width: 90%; }
-      .chat-header { padding: 16px 20px; }
-      .messages-container { padding: 16px 20px; }
-      .search-button { width: 96px; }
-      .search-actions { gap: 10px; }
-    }
-
-    /* ============= 滚动条 ============= */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #999999; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>羊羊 AI</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-  <div class="container">
-    <!-- 顶部导航栏 -->
-    <div class="header">
-      <div class="logo">
-        <div class="logo-icon">◆</div>
-        <span>科研人才 Mapping Agent</span>
+  <div class="app">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" fill="#c8956a" opacity="0.15"/>
+            <ellipse cx="12" cy="13" rx="7" ry="6" fill="#c8956a" opacity="0.3"/>
+            <circle cx="9" cy="10" r="2.5" fill="#c8956a" opacity="0.5"/>
+            <circle cx="15" cy="10" r="2.5" fill="#c8956a" opacity="0.5"/>
+            <circle cx="12" cy="8" r="3" fill="#c8956a" opacity="0.5"/>
+          </svg>
+          <span class="logo-text">羊羊 AI</span>
+        </div>
+        <button class="icon-btn" id="toggle-sidebar" title="收起侧栏">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+        </button>
       </div>
-      <div class="header-right">
-        <div class="status-badge">
-          <div class="status-dot"></div>
-          <span>连接中</span>
+
+      <button class="new-chat-btn" id="new-chat-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        新对话
+      </button>
+
+      <div class="history-section">
+        <div class="history-label">最近对话</div>
+        <div class="history-list" id="history-list">
+          <!-- 动态插入 -->
         </div>
       </div>
-    </div>
+    </aside>
 
     <!-- 主内容区 -->
-    <div class="main">
-      <!-- 左侧面板 -->
-      <div class="sidebar">
-        <div class="sidebar-content">
-          <!-- 搜索面板 -->
-          <div class="search-panel">
-            <div class="search-title">搜索</div>
+    <main class="main" id="main">
+      <!-- 顶部栏 -->
+      <header class="topbar">
+        <button class="icon-btn" id="open-sidebar" title="展开侧栏" style="display:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="spacer"></div>
+        <button class="new-chat-icon-btn" id="new-chat-top" title="新对话">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </button>
+      </header>
 
-            <div class="search-box">
-              <div class="input-group">
-                <label class="input-label">研究者信息</label>
-
-                <div class="search-actions">
-                  <div class="input-wrapper">
-                    <input
-                      type="text"
-                      id="searchInput"
-                      placeholder="例如：zhihua zhou nju"
-                      autocomplete="off"
-                    >
-                  </div>
-                  <button id="searchBtn" type="button" class="search-button">搜索</button>
-                </div>
-
-                <div class="input-hint">Enter the name and school</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 历史记录 -->
-          <div class="history-section">
-            <div class="history-title">最近搜索</div>
-            <div id="historyList"></div>
+      <!-- 对话内容区 -->
+      <div class="chat-container" id="chat-container">
+        <!-- 欢迎页 -->
+        <div class="welcome" id="welcome">
+          <div class="sheep-wrap">
+            <img src="sheep.png" alt="羊羊" class="sheep-img" id="sheep-img" />
+            <!-- SVG fallback，若图片加载失败则显示 -->
+            <svg class="sheep-svg" id="sheep-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+              <!-- 身体 -->
+              <ellipse cx="100" cy="140" rx="55" ry="40" fill="white" stroke="#ccc" stroke-width="2"/>
+              <!-- 羊毛团 -->
+              <circle cx="100" cy="95" r="42" fill="white" stroke="#ccc" stroke-width="2"/>
+              <circle cx="72" cy="85" r="28" fill="white" stroke="#ccc" stroke-width="2"/>
+              <circle cx="128" cy="85" r="28" fill="white" stroke="#ccc" stroke-width="2"/>
+              <circle cx="85" cy="68" r="22" fill="white" stroke="#ccc" stroke-width="2"/>
+              <circle cx="115" cy="68" r="22" fill="white" stroke="#ccc" stroke-width="2"/>
+              <circle cx="100" cy="62" r="20" fill="white" stroke="#ccc" stroke-width="2"/>
+              <!-- 脸 -->
+              <ellipse cx="100" cy="105" rx="28" ry="25" fill="white" stroke="#ccc" stroke-width="1.5"/>
+              <!-- 眼睛 -->
+              <ellipse cx="91" cy="100" rx="4" ry="5" fill="#333"/>
+              <ellipse cx="109" cy="100" rx="4" ry="5" fill="#333"/>
+              <circle cx="92" cy="99" r="1.5" fill="white"/>
+              <circle cx="110" cy="99" r="1.5" fill="white"/>
+              <!-- 腮红 -->
+              <ellipse cx="84" cy="109" rx="6" ry="4" fill="#ffb6c1" opacity="0.7"/>
+              <ellipse cx="116" cy="109" rx="6" ry="4" fill="#ffb6c1" opacity="0.7"/>
+              <!-- 嘴 -->
+              <path d="M95 114 Q100 119 105 114" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- 腿 -->
+              <rect x="76" y="170" width="12" height="20" rx="6" fill="white" stroke="#ccc" stroke-width="1.5"/>
+              <rect x="112" y="170" width="12" height="20" rx="6" fill="white" stroke="#ccc" stroke-width="1.5"/>
+              <rect x="88" y="172" width="12" height="18" rx="6" fill="white" stroke="#ccc" stroke-width="1.5"/>
+              <rect x="100" y="172" width="12" height="18" rx="6" fill="white" stroke="#ccc" stroke-width="1.5"/>
+              <!-- 爱心 -->
+              <path d="M68 58 C68 54 62 50 58 54 C54 58 58 64 68 70 C78 64 82 58 78 54 C74 50 68 54 68 58Z" fill="#ff6b8a" opacity="0.85"/>
+              <path d="M82 48 C82 45 77 42 74 45 C71 48 74 53 82 58 C90 53 93 48 90 45 C87 42 82 45 82 48Z" fill="#ff6b8a" opacity="0.85"/>
+            </svg>
           </div>
         </div>
+
+        <!-- 消息列表 -->
+        <div class="messages" id="messages"></div>
       </div>
 
-      <!-- 右侧聊天区 -->
-      <div class="chat-area">
-        <div class="chat-header">
-          <div class="chat-header-title" id="chatTitle">欢迎使用</div>
-          <div class="chat-header-subtitle" id="chatSubtitle">在左侧输入相关研究者信息开始评估</div>
-        </div>
-
-        <div class="messages-container" id="messagesContainer">
-          <div class="empty-state">
-            <div class="empty-icon">📊</div>
-            <div class="empty-text">输入研究者姓名和所在学校，获取学术成就评估报告</div>
-          </div>
+      <!-- 输入区 -->
+      <div class="input-area">
+        <div class="input-box">
+          <textarea
+            id="user-input"
+            placeholder="消息羊羊..."
+            rows="1"
+            maxlength="4000"
+          ></textarea>
+          <button class="send-btn" id="send-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
-  <script>
-    // ================== 配置：这里填你的 worker 域名 ==================
-    // 注意：你之前是 weathered-lab-9d3f.8f3va2ehrl.workers.dev 这种
-    const WORKER_URL = "https://weathered-lab-9d3f.8f3va2ehrl.workers.dev";
-
-    // ================== 状态管理 ==================
-    let isLoading = false;
-    let searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
-
-    // ================== DOM ==================
-    const searchInput = document.getElementById("searchInput");
-    const searchBtn = document.getElementById("searchBtn");
-    const messagesContainer = document.getElementById("messagesContainer");
-    const chatTitle = document.getElementById("chatTitle");
-    const chatSubtitle = document.getElementById("chatSubtitle");
-    const historyList = document.getElementById("historyList");
-
-    function init() {
-      renderHistory();
-      searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !isLoading) performSearch();
-      });
-      searchBtn.addEventListener("click", performSearch);
-    }
-
-    function setLoading(loading) {
-      isLoading = loading;
-      if (loading) {
-        searchBtn.classList.add("loading");
-        searchBtn.textContent = "处理中...";
-      } else {
-        searchBtn.classList.remove("loading");
-        searchBtn.textContent = "搜索";
-      }
-    }
-
-    function nowTime() {
-      return new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-    }
-
-    function addMessage(text, sender) {
-      const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${sender}`;
-
-      const bubble = document.createElement("div");
-      bubble.className = "message-bubble";
-      bubble.textContent = String(text);
-
-      const time = document.createElement("div");
-      time.className = "message-time";
-      time.textContent = nowTime();
-
-      messageDiv.appendChild(bubble);
-      messageDiv.appendChild(time);
-
-      messagesContainer.appendChild(messageDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function addLoadingMessage() {
-      const messageDiv = document.createElement("div");
-      messageDiv.className = "message assistant";
-      messageDiv.id = "loadingMessage";
-
-      const bubble = document.createElement("div");
-      bubble.className = "message-bubble";
-
-      const dots = document.createElement("div");
-      dots.className = "loading-dots";
-      dots.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
-
-      bubble.appendChild(dots);
-      messageDiv.appendChild(bubble);
-
-      messagesContainer.appendChild(messageDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function removeLoadingMessage() {
-      const el = document.getElementById("loadingMessage");
-      if (el) el.remove();
-    }
-
-    function addStatsCard(rows) {
-      const card = document.createElement("div");
-      card.className = "stats-card";
-
-      card.innerHTML = rows.map(r => `
-        <div class="stat-row">
-          <span class="stat-label">${escapeHtml(r.label)}</span>
-          <span class="stat-value">${escapeHtml(String(r.value))}</span>
-        </div>
-      `).join("");
-
-      messagesContainer.appendChild(card);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function addStatsDetailCard(stats) {
-      const card = document.createElement("div");
-      card.className = "stats-card";
-
-      const keys = ["A", "B", "C", "NON"];
-      const title = document.createElement("div");
-      title.className = "chart-title";
-      title.textContent = "CCF 等级分布";
-
-      const grid = document.createElement("div");
-      grid.className = "stats-mini-table";
-
-      const headers = ["等级", "类型", "层级", "数量"];
-      headers.forEach((h) => {
-        const cell = document.createElement("div");
-        cell.className = "cell h";
-        cell.textContent = h;
-        grid.appendChild(cell);
-      });
-
-      keys.forEach((k) => {
-        const s = stats && stats[k] ? stats[k] : {};
-        const type = s.type ?? "-";
-        const level = s.level ?? "-";
-        const count = s.count ?? 0;
-
-        const c1 = document.createElement("div");
-        c1.className = "cell v2"; c1.textContent = k;
-        const c2 = document.createElement("div");
-        c2.className = "cell v2"; c2.textContent = type;
-        const c3 = document.createElement("div");
-        c3.className = "cell v2"; c3.textContent = level;
-        const c4 = document.createElement("div");
-        c4.className = "cell v"; c4.textContent = String(count);
-
-        grid.appendChild(c1);
-        grid.appendChild(c2);
-        grid.appendChild(c3);
-        grid.appendChild(c4);
-      });
-
-      card.appendChild(title);
-      card.appendChild(grid);
-
-      messagesContainer.appendChild(card);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-
-    function parseWorkerResponse(rawText) {
-      // 你的 n8n 输出是数组：[{ ... }]
-      // worker 通常会把响应当成 text 返回，所以这里先 JSON.parse
-      let parsed;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        return { ok: false, error: "返回内容不是有效 JSON", rawText };
-      }
-
-      // 如果是数组，取第 0 个
-      if (Array.isArray(parsed)) {
-        return { ok: true, payload: parsed[0], raw: parsed };
-      }
-      // 如果是对象，直接用
-      if (parsed && typeof parsed === "object") {
-        return { ok: true, payload: parsed, raw: parsed };
-      }
-
-      return { ok: false, error: "JSON 结构不符合预期", rawText };
-    }
-
-    async function performSearch() {
-      const text = (searchInput.value || "").trim();
-      if (!text) return alert("请输入研究者信息");
-      if (isLoading) return;
-
-      setLoading(true);
-
-      addToHistory(text);
-      messagesContainer.innerHTML = "";
-      addMessage(text, "user");
-      addLoadingMessage();
-
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          // 必须和你 n8n Code 里取的字段一致（你前面 n8n 用的是 body.message）
-          body: JSON.stringify({ message: text })
-        });
-
-        const raw = await res.text();
-        const parsed = parseWorkerResponse(raw);
-
-        removeLoadingMessage();
-
-        if (!res.ok) {
-          addMessage("请求失败：HTTP " + res.status, "assistant");
-          if (raw) addMessage("返回： " + raw.slice(0, 500), "assistant");
-          chatTitle.textContent = "请求失败";
-          chatSubtitle.textContent = "请检查网络或 Worker/N8N 配置";
-          return;
-        }
-
-        if (!parsed.ok || !parsed.payload) {
-          addMessage("返回结果解析失败，请稍后重试", "assistant");
-          if (parsed.error) addMessage(parsed.error, "assistant");
-          if (raw) addMessage("原始返回： " + raw.slice(0, 500), "assistant");
-          return;
-        }
-
-        const data = parsed.payload;
-
-        renderN8nResult(data);
-
-      } catch (e) {
-        removeLoadingMessage();
-        addMessage("请求失败：" + e.message, "assistant");
-        chatTitle.textContent = "网络错误";
-        chatSubtitle.textContent = "请稍后重试";
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    function renderN8nResult(data) {
-      // 标题区域
-      const title = data.target_scholar || data.author_name || "评估结果";
-      const sub = data.university || data.university_name || "科研人才 mapping 统计";
-      chatTitle.textContent = "评估结果：" + title;
-      chatSubtitle.textContent = sub;
-
-      // 基本统计
-      const rows = [];
-      if (data.total_papers != null) rows.push({ label: "总论文数", value: data.total_papers });
-      if (data.identified_count != null) rows.push({ label: "已识别数量", value: data.identified_count });
-      if (data.need_ai_count != null) rows.push({ label: "需要 AI 统计", value: data.need_ai_count });
-
-      if (rows.length) addStatsCard(rows);
-
-      // stats 详情
-      if (data.stats && typeof data.stats === "object") {
-        addStatsDetailCard(data.stats);
-      } else {
-        addMessage("n8n 未返回 stats 统计明细", "assistant");
-      }
-
-    
-
-      // 额外兜底：如果有 need_ai_count / 其他字段不展示，可按需补
-    }
-
-    // ================== 历史记录 ==================
-    function parseQueryForHistory(query) {
-      const parts = (query || "").split(/[\s，,]+/).filter(Boolean);
-      const name = parts[0] || query;
-      const university = parts.slice(1).join(" ");
-      return { name, university };
-    }
-
-    function addToHistory(query) {
-      const { name, university } = parseQueryForHistory(query);
-
-      const item = {
-        name,
-        university,
-        query,
-        timestamp: new Date().toISOString()
-      };
-
-      // 去重 + 置顶
-      searchHistory = searchHistory.filter(h => h.query !== query);
-      searchHistory.unshift(item);
-      searchHistory = searchHistory.slice(0, 10);
-
-      localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
-      renderHistory();
-    }
-
-    function renderHistory() {
-      historyList.innerHTML = "";
-
-      if (!searchHistory.length) {
-        const empty = document.createElement("div");
-        empty.style.color = "#a1a1a6";
-        empty.style.fontSize = "12px";
-        empty.style.padding = "6px 2px";
-        empty.textContent = "暂无历史记录";
-        historyList.appendChild(empty);
-        return;
-      }
-
-      searchHistory.forEach((item) => {
-        const div = document.createElement("div");
-        div.className = "history-item";
-
-        const name = item.name || "";
-        const uni = item.university || "";
-
-        div.innerHTML = `
-          <div class="history-item-name">${escapeHtml(name)}</div>
-          <div class="history-item-school">${escapeHtml(uni)}</div>
-        `;
-
-        div.addEventListener("click", () => {
-          searchInput.value = item.query;
-          performSearch();
-        });
-
-        historyList.appendChild(div);
-      });
-    }
-
-    // ================== 工具函数 ==================
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, (m) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      }[m]));
-    }
-
-    init();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
