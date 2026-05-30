@@ -208,25 +208,21 @@ async function callCozeAPI(messages) {
 
   // 过滤掉开场白，只传真实对话（user/ai 交替）
   const realMessages = messages.filter(m => m.content !== PROLOGUE);
-  const all = realMessages.slice(-20);
-  const history = all.slice(0, -1).map(m => ({
+  const additional_messages = realMessages.slice(-20).map(m => ({
     role: m.role === 'user' ? 'user' : 'assistant',
     content: m.content,
     content_type: 'text',
   }));
-  const lastMsg = all[all.length - 1];
 
+  // 扣子 v3 要求 stream 与 auto_save_history 成对出现且互斥：
+  // stream=false → auto_save_history=true（非流式 + 轮询）
+  // stream=true  → auto_save_history=false（SSE 流式）
   const body = {
     bot_id: CONFIG.botId,
     user_id: userId,
     stream: false,
     auto_save_history: true,
-    additional_messages: history,
-    messages: [{
-      role: 'user',
-      content: lastMsg.content,
-      content_type: 'text',
-    }],
+    additional_messages,
   };
 
   const res = await fetch(`${CONFIG.apiBase}/v3/chat`, {
