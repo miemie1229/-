@@ -2,19 +2,22 @@
    配置区 - 替换成你的扣子 API 信息
    ============================================================ */
 const CONFIG = {
-  apiToken: 'pat_8PW4mNydSwgVZGwpCvTet9gAqE35K8Ql9HNfnFia2hyuFJ2iVbB3jvYgWR9XDEID',   // 扣子 Personal Access Token
-  botId:    '7643773863985758227',           // 主 Agent 的 Bot ID
-  apiBase:  'https://api.coze.cn',   // 国内用 coze.cn，海外用 coze.com
+  apiToken: 'pat_8PW4mNydSwgVZGwpCvTet9gAqE35K8Ql9HNfnFia2hyuFJ2iVbB3jvYgWR9XDEID',
+  botId:    '7643773863985758227',
+  apiBase:  'https://api.coze.cn',
 };
 
+const PROLOGUE = `hi~我是你的AI人才sourcing助手✧｡٩(ˊᗜˋ)و✧*｡
+最近关注哪所高校，或者哪个实验室？让我来为你绘制专属人才地图！找到科研大佬，并帮你与他们建立联系和初步沟通！₍₍ ᕕ(´ ω\` )ᕗ⁾⁾`;
+
 /* ============================================================
-   状态管理
+   状态管理 - 完整保存含消息内容
    ============================================================ */
-let chats = JSON.parse(localStorage.getItem('sheep_chats') || '[]');
+let chats = JSON.parse(localStorage.getItem('sourcing_chats') || '[]');
 let currentChatId = null;
 
 function saveChats() {
-  localStorage.setItem('sheep_chats', JSON.stringify(chats));
+  localStorage.setItem('sourcing_chats', JSON.stringify(chats));
 }
 
 function getChat(id) {
@@ -23,7 +26,12 @@ function getChat(id) {
 
 function createChat() {
   const id = Date.now().toString();
-  const chat = { id, title: '新对话', messages: [], createdAt: id };
+  const chat = {
+    id,
+    title: '新对话',
+    messages: [], // { role: 'user'|'ai', content: string }
+    createdAt: id,
+  };
   chats.unshift(chat);
   saveChats();
   return chat;
@@ -52,7 +60,7 @@ function renderHistory() {
 }
 
 /* ============================================================
-   渲染消息
+   渲染消息（含开场白）
    ============================================================ */
 function renderMessages(messages) {
   const container = document.getElementById('messages');
@@ -67,11 +75,11 @@ function renderMessages(messages) {
 
   welcome.style.display = 'none';
   container.style.display = 'flex';
-
-  messages.forEach(msg => appendMessageDOM(msg.role, msg.content));
+  messages.forEach(msg => appendMessageDOM(msg.role, msg.content, false));
+  scrollToBottom();
 }
 
-function appendMessageDOM(role, content) {
+function appendMessageDOM(role, content, animate = true) {
   const welcome   = document.getElementById('welcome');
   const container = document.getElementById('messages');
   welcome.style.display = 'none';
@@ -79,12 +87,13 @@ function appendMessageDOM(role, content) {
 
   const div = document.createElement('div');
   div.className = `message ${role}`;
+  if (!animate) div.style.animation = 'none';
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
   bubble.textContent = content;
   div.appendChild(bubble);
   container.appendChild(div);
-  scrollToBottom();
+  if (animate) scrollToBottom();
   return bubble;
 }
 
@@ -97,12 +106,7 @@ function appendTypingIndicator() {
   const div = document.createElement('div');
   div.className = 'message ai typing';
   div.id = 'typing-indicator';
-  div.innerHTML = `
-    <div class="bubble">
-      <div class="typing-dots">
-        <span></span><span></span><span></span>
-      </div>
-    </div>`;
+  div.innerHTML = `<div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   container.appendChild(div);
   scrollToBottom();
 }
@@ -113,12 +117,12 @@ function removeTypingIndicator() {
 }
 
 function scrollToBottom() {
-  const chatContainer = document.getElementById('chat-container');
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  const c = document.getElementById('chat-container');
+  c.scrollTop = c.scrollHeight;
 }
 
 /* ============================================================
-   切换对话
+   切换对话（恢复完整历史消息）
    ============================================================ */
 function switchChat(id) {
   currentChatId = id;
@@ -128,33 +132,35 @@ function switchChat(id) {
 }
 
 /* ============================================================
-   新建对话
+   新建对话（显示开场白）
    ============================================================ */
 function startNewChat() {
   const chat = createChat();
   currentChatId = chat.id;
-  renderMessages([]);
+
+  // 把开场白作为 ai 消息存入，这样切换回来也能看到
+  chat.messages.push({ role: 'ai', content: PROLOGUE });
+  saveChats();
+
+  renderMessages(chat.messages);
   renderHistory();
   document.getElementById('user-input').focus();
 }
 
 /* ============================================================
-   发送消息 & 调用扣子 API
+   发送消息
    ============================================================ */
 async function sendMessage(text) {
   if (!text.trim()) return;
 
-  // 确保有当前对话
   if (!currentChatId) {
-    const chat = createChat();
-    currentChatId = chat.id;
-    renderHistory();
+    startNewChat();
   }
 
   const chat = getChat(currentChatId);
   if (!chat) return;
 
-  // 推入用户消息
+  // 保存用户消息
   chat.messages.push({ role: 'user', content: text });
   if (chat.title === '新对话') {
     updateChatTitle(currentChatId, text);
@@ -163,14 +169,12 @@ async function sendMessage(text) {
   saveChats();
   appendMessageDOM('user', text);
 
-  // 禁用输入
-  const input  = document.getElementById('user-input');
+  const input   = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
   input.value = '';
   input.style.height = 'auto';
   sendBtn.disabled = true;
 
-  // 显示 typing
   appendTypingIndicator();
 
   try {
@@ -181,7 +185,9 @@ async function sendMessage(text) {
     appendMessageDOM('ai', reply);
   } catch (err) {
     removeTypingIndicator();
-    const errMsg = '请求失败，请检查 API Token 和 Bot ID 配置。错误：' + err.message;
+    const errMsg = '请求失败：' + err.message;
+    chat.messages.push({ role: 'ai', content: errMsg });
+    saveChats();
     appendMessageDOM('ai', errMsg);
     console.error('Coze API Error:', err);
   }
@@ -191,36 +197,36 @@ async function sendMessage(text) {
 }
 
 /* ============================================================
-   扣子 API 调用（非流式）
-   替换成流式可参考注释中的 SSE 版本
+   扣子 API 调用
    ============================================================ */
 async function callCozeAPI(messages) {
-  // 把历史消息转成扣子格式
-  const cozeMessages = messages.map(m => ({
+  const userId = localStorage.getItem('sourcing_user_id') || (() => {
+    const id = 'user_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('sourcing_user_id', id);
+    return id;
+  })();
+
+  // 过滤掉开场白，只传真实对话（user/ai 交替）
+  const realMessages = messages.filter(m => m.content !== PROLOGUE);
+  const all = realMessages.slice(-20);
+  const history = all.slice(0, -1).map(m => ({
     role: m.role === 'user' ? 'user' : 'assistant',
     content: m.content,
     content_type: 'text',
   }));
-
-  // 只保留最后 20 条，避免 token 超限
-  const trimmed = cozeMessages.slice(-20);
-  // 去掉最后一条（本次 user 消息单独传）
-  const history = trimmed.slice(0, -1);
-  const userMsg = trimmed[trimmed.length - 1];
-
-  const userId = localStorage.getItem('sheep_user_id') || (() => {
-    const id = 'user_' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem('sheep_user_id', id);
-    return id;
-  })();
+  const lastMsg = all[all.length - 1];
 
   const body = {
     bot_id: CONFIG.botId,
     user_id: userId,
     stream: false,
-    auto_save_history: false,
+    auto_save_history: true,
     additional_messages: history,
-    messages: [userMsg],
+    messages: [{
+      role: 'user',
+      content: lastMsg.content,
+      content_type: 'text',
+    }],
   };
 
   const res = await fetch(`${CONFIG.apiBase}/v3/chat`, {
@@ -238,60 +244,50 @@ async function callCozeAPI(messages) {
   }
 
   const data = await res.json();
-
-  // 轮询获取结果（chat 为异步时需要轮询）
-  if (data.data && data.data.status === 'in_progress') {
-    return await pollChatResult(data.data.id, data.data.conversation_id);
+  if (data.code && data.code !== 0) {
+    throw new Error(`API错误 ${data.code}: ${data.msg}`);
   }
 
-  // 直接返回结果
-  if (data.data && data.data.messages) {
-    const answer = data.data.messages.find(m => m.role === 'assistant' && m.type === 'answer');
-    return answer ? answer.content : '（无回复）';
-  }
-
-  // v3 同步结果
-  if (data.messages) {
-    const answer = data.messages.find(m => m.role === 'assistant' && m.type === 'answer');
-    return answer ? answer.content : '（无回复）';
-  }
-
-  throw new Error('Unexpected response: ' + JSON.stringify(data));
+  const chatId         = data.data.id;
+  const conversationId = data.data.conversation_id;
+  return await pollChatResult(chatId, conversationId);
 }
 
-/* 轮询（当 chat 为异步时） */
-async function pollChatResult(chatId, conversationId, maxWait = 30000) {
+/* 轮询结果 */
+async function pollChatResult(chatId, conversationId, maxWait = 60000) {
   const start = Date.now();
   while (Date.now() - start < maxWait) {
-    await sleep(1000);
+    await sleep(1500);
     const res = await fetch(
       `${CONFIG.apiBase}/v3/chat/retrieve?chat_id=${chatId}&conversation_id=${conversationId}`,
-      {
-        headers: { 'Authorization': `Bearer ${CONFIG.apiToken}` }
-      }
+      { headers: { 'Authorization': `Bearer ${CONFIG.apiToken}` } }
     );
     const data = await res.json();
-    if (data.data && data.data.status === 'completed') {
-      // 获取消息列表
+    const status = data.data && data.data.status;
+
+    if (status === 'completed') {
       const msgRes = await fetch(
         `${CONFIG.apiBase}/v3/chat/message/list?chat_id=${chatId}&conversation_id=${conversationId}`,
         { headers: { 'Authorization': `Bearer ${CONFIG.apiToken}` } }
       );
       const msgData = await msgRes.json();
-      const answer = (msgData.data || []).find(m => m.role === 'assistant' && m.type === 'answer');
+      const answer = (msgData.data || []).find(
+        m => m.role === 'assistant' && m.type === 'answer'
+      );
       return answer ? answer.content : '（无回复）';
     }
-    if (data.data && (data.data.status === 'failed' || data.data.status === 'canceled')) {
-      throw new Error('Chat ended with status: ' + data.data.status);
+
+    if (status === 'failed' || status === 'canceled' || status === 'requires_action') {
+      throw new Error('对话异常，状态：' + status);
     }
   }
-  throw new Error('Timeout waiting for response');
+  throw new Error('等待回复超时，请重试');
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /* ============================================================
-   自动调整输入框高度
+   输入框自动高度
    ============================================================ */
 function autoResize(el) {
   el.style.height = 'auto';
@@ -305,16 +301,16 @@ let sidebarCollapsed = false;
 
 function toggleSidebar() {
   sidebarCollapsed = !sidebarCollapsed;
-  const sidebar    = document.getElementById('sidebar');
-  const openBtn    = document.getElementById('open-sidebar');
-  const toggleBtn  = document.getElementById('toggle-sidebar');
+  const sidebar   = document.getElementById('sidebar');
+  const openBtn   = document.getElementById('open-sidebar');
+  const toggleBtn = document.getElementById('toggle-sidebar');
   sidebar.classList.toggle('collapsed', sidebarCollapsed);
-  openBtn.style.display    = sidebarCollapsed ? 'flex' : 'none';
-  toggleBtn.style.display  = sidebarCollapsed ? 'none' : 'flex';
+  openBtn.style.display   = sidebarCollapsed ? 'flex' : 'none';
+  toggleBtn.style.display = sidebarCollapsed ? 'none' : 'flex';
 }
 
 /* ============================================================
-   图片加载兜底：若 sheep.png 不存在，显示 SVG
+   图片加载兜底
    ============================================================ */
 function initSheepImage() {
   const img = document.getElementById('sheep-img');
@@ -332,7 +328,7 @@ function init() {
   initSheepImage();
   renderHistory();
 
-  // 如果有历史，默认打开最近一条
+  // 有历史则打开最近一条（含完整消息）
   if (chats.length > 0) {
     switchChat(chats[0].id);
   }
@@ -353,7 +349,6 @@ function init() {
   });
 
   sendBtn.addEventListener('click', () => sendMessage(input.value));
-
   document.getElementById('new-chat-btn').addEventListener('click', startNewChat);
   document.getElementById('new-chat-top').addEventListener('click', startNewChat);
   document.getElementById('toggle-sidebar').addEventListener('click', toggleSidebar);
