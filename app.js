@@ -10,6 +10,11 @@ const CONFIG = {
 const PROLOGUE = `hi！✧｡٩(ˊᗜˋ)و✧*｡我是你的AI人才sourcing助手咩咩 Ꮚ･ꈊ･Ꮚ
 最近关注哪所高校，或者哪个实验室？让我来为你绘制专属人才地图！找到科研大佬，并帮你与他们建立联系和初步沟通！₍₍ ᕕ(´ ω\` )ᕗ⁾⁾`;
 
+const AVATAR = {
+  ai:   'sheep.png',
+  user: 'user-avatar.png',
+};
+
 /* ============================================================
    状态管理 - 完整保存含消息内容
    ============================================================ */
@@ -107,12 +112,29 @@ function appendMessageDOM(role, content, animate = true) {
   container.style.display = 'flex';
 
   const div = document.createElement('div');
-  div.className = `message ${role}`;
+  div.className = `message ${role}` + (animate ? ' msg-pop-in' : '');
   if (!animate) div.style.animation = 'none';
+
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+
+  const avatar = document.createElement('img');
+  avatar.className = 'msg-avatar';
+  avatar.src = role === 'user' ? AVATAR.user : AVATAR.ai;
+  avatar.alt = '';
+
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
   bubble.textContent = content;
-  div.appendChild(bubble);
+
+  if (role === 'user') {
+    row.appendChild(bubble);
+    row.appendChild(avatar);
+  } else {
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+  }
+  div.appendChild(row);
   container.appendChild(div);
   if (animate) scrollToBottom();
   return bubble;
@@ -126,7 +148,11 @@ function appendTypingIndicator() {
   const div = document.createElement('div');
   div.className = 'message ai typing';
   div.id = 'typing-indicator';
-  div.innerHTML = `<div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  div.innerHTML = `
+    <div class="msg-row">
+      <img class="msg-avatar" src="${AVATAR.ai}" alt="" />
+      <div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+    </div>`;
   container.appendChild(div);
   scrollToBottom();
 }
@@ -168,13 +194,20 @@ function beginConversation() {
   const chat = getChat(currentChatId);
   if (!chat) return;
 
+  hideSplash();
+  const container = document.getElementById('messages');
+  container.style.display = 'flex';
+  container.innerHTML = '';
+
   const hasPrologue = chat.messages.some(m => m.role === 'ai' && m.content === PROLOGUE);
   if (!hasPrologue) {
     chat.messages.push({ role: 'ai', content: PROLOGUE });
     saveChats();
+    appendMessageDOM('ai', PROLOGUE, true);
+  } else {
+    appendMessageDOM('ai', PROLOGUE, false);
   }
 
-  renderMessages(chat.messages);
   document.getElementById('user-input').focus();
 }
 
